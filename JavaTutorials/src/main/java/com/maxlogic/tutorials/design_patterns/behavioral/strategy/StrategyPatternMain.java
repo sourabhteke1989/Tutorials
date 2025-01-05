@@ -1,7 +1,7 @@
 package com.maxlogic.tutorials.design_patterns.behavioral.strategy;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StrategyPatternMain {
 
@@ -23,10 +23,10 @@ public class StrategyPatternMain {
 
   public static void main(String[] args) {
     // Load balancer with Round Robin strategy
-    Map<String, Server> servers = new LinkedHashMap<>();
-    servers.put("server1", new Server("server1", 2));
-    servers.put("server2", new Server("server2", 1));
-    servers.put("server3", new Server("server3", 3));
+    List<Server> servers = new ArrayList<>();
+    servers.add(new Server("server1", 2));
+    servers.add(new Server("server2", 1));
+    servers.add(new Server("server3", 3));
     LoadBalancer loadBalancer = new LoadBalancer(servers, "ROUND_ROBIN");
     for (int i = 0; i < 10; i++) {
       System.out.println("Got Server with IP :" + loadBalancer.assignServer().getIp());

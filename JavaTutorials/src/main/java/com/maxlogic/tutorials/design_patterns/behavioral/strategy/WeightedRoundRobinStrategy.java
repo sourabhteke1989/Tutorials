@@ -2,7 +2,6 @@ package com.maxlogic.tutorials.design_patterns.behavioral.strategy;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntUnaryOperator;
 
@@ -35,12 +34,12 @@ public class WeightedRoundRobinStrategy implements ILoadBalancerStrategy {
     }
   };
 
-  WeightedRoundRobinStrategy(Map<String, Server> servers) {
-    this.serverList = List.copyOf(servers.values());
-    initializeWeights(servers);
+  WeightedRoundRobinStrategy(List<Server> servers) {
+    this.serverList = List.copyOf(servers);
+    initializeWeights();
   }
 
-  private void initializeWeights(Map<String, Server> servers) {
+  private void initializeWeights() {
     int weight = 0;
     for (Server server : this.serverList) {
       weight += server.getWeight();
@@ -51,6 +50,10 @@ public class WeightedRoundRobinStrategy implements ILoadBalancerStrategy {
 
   @Override
   public Server assignServer() {
-    return this.serverList.get(currentIdx.getAndUpdate(currentIdxUpdater));
+    int idx;
+    synchronized (this) {
+      idx = currentIdx.getAndUpdate(currentIdxUpdater);
+    }
+    return this.serverList.get(idx);
   }
 }

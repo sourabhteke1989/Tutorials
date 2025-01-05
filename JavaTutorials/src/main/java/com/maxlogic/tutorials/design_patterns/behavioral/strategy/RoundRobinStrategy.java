@@ -1,7 +1,6 @@
 package com.maxlogic.tutorials.design_patterns.behavioral.strategy;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntUnaryOperator;
 
@@ -17,8 +16,8 @@ public class RoundRobinStrategy implements ILoadBalancerStrategy {
     }
   };
 
-  RoundRobinStrategy(Map<String, Server> servers) {
-    this.serverList = List.copyOf(servers.values());
+  RoundRobinStrategy(List<Server> servers) {
+    this.serverList = List.copyOf(servers);
   }
 
   @Override

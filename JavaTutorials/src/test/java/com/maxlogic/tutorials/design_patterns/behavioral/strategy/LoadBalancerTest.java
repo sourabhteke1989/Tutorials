@@ -4,21 +4,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class LoadBalancerTest {
 
-    private Map<String, Server> servers;
+    private List<Server> servers;
     private LoadBalancer loadBalancer;
 
     @BeforeEach
     public void setUp() {
-        servers = new LinkedHashMap<>();
-        servers.put("server1", new Server("server1", 1));
-        servers.put("server2", new Server("server2", 2));
-        servers.put("server3", new Server("server3", 3));
+        servers = new ArrayList<>();
+        servers.add(new Server("server1", 1));
+        servers.add(new Server("server2", 2));
+        servers.add(new Server("server3", 3));
         loadBalancer = new LoadBalancer(servers, "WEIGHTED_ROUND_ROBIN");
     }
 
@@ -26,14 +31,14 @@ public class LoadBalancerTest {
     public void testAssignServer() {
         Server server = loadBalancer.assignServer();
         assertNotNull(server);
-        assertTrue(servers.containsKey(server.getIp()));
+        assertTrue(servers.stream().anyMatch(s -> s.getIp().equals(server.getIp())));
     }
 
     @Test
     public void testUpdateLoadBalancer() {
-        Map<String, Server> newServers = new HashMap<>();
-        newServers.put("server4", new Server("server4", 4));
-        newServers.put("server5", new Server("server5", 5));
+        List<Server> newServers = new ArrayList<>();
+        newServers.add(new Server("server4", 4));
+        newServers.add(new Server("server5", 5));
         loadBalancer.updateLoadBalancer(newServers, "ROUND_ROBIN");
 
         assertEquals("ROUND_ROBIN", loadBalancer.getStrategy());
@@ -61,15 +66,22 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void testRoundRobinStrategyCount() {
+    public void testRoundRobinStrategyCount() throws InterruptedException {
         loadBalancer.updateLoadBalancer(servers, "ROUND_ROBIN");
         assertEquals("ROUND_ROBIN", loadBalancer.getStrategy());
 
-        Map<String, Integer> serverCount = new HashMap<>();
+        Map<String, Integer> serverCount = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
         for (int i = 0; i < 300; i++) {
-            Server server = loadBalancer.assignServer();
-            serverCount.put(server.getIp(), serverCount.getOrDefault(server.getIp(), 0) + 1);
+            executorService.submit(() -> {
+                Server server = loadBalancer.assignServer();
+                serverCount.compute(server.getIp(), (k, v) -> v == null ? 1 : v + 1);
+            });
         }
+
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.MINUTES);
 
         assertEquals(100, serverCount.get("server1"));
         assertEquals(100, serverCount.get("server2"));
@@ -92,18 +104,26 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void testWeightedRoundRobinStrategyCount() {
+    public void testWeightedRoundRobinStrategyCount() throws InterruptedException {
         loadBalancer.updateLoadBalancer(servers, "WEIGHTED_ROUND_ROBIN");
         assertEquals("WEIGHTED_ROUND_ROBIN", loadBalancer.getStrategy());
 
-        Map<String, Integer> serverCount = new HashMap<>();
+        Map<String, Integer> serverCount = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+        CountDownLatch latch = new CountDownLatch(600);
         for (int i = 0; i < 600; i++) {
-            Server server = loadBalancer.assignServer();
-            serverCount.put(server.getIp(), serverCount.getOrDefault(server.getIp(), 0) + 1);
+            executorService.submit(() -> {
+                Server server = loadBalancer.assignServer();
+                serverCount.compute(server.getIp(), (k, v) -> v == null ? 1 : v + 1);
+                latch.countDown();
+            });
         }
 
-        assertTrue(serverCount.get("server1") < serverCount.get("server2"));
-        assertTrue(serverCount.get("server2") < serverCount.get("server3"));
+        latch.await();
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.MINUTES);
+
         assertEquals(100, serverCount.get("server1"));
         assertEquals(200, serverCount.get("server2"));
         assertEquals(300, serverCount.get("server3"));

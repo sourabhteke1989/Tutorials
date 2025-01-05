@@ -1,10 +1,10 @@
 package com.maxlogic.tutorials.design_patterns.behavioral.strategy;
 
-import java.util.Map;
+import java.util.List;
 
 public class LoadBalancerStrategyFactory {
 
-    public static ILoadBalancerStrategy getStrategy(String strategy, Map<String, Server> servers) {
+    public static ILoadBalancerStrategy getStrategy(String strategy, List<Server> servers) {
         if (strategy == null) {
             return null;
         }

@@ -1,33 +1,33 @@
 package com.maxlogic.tutorials.design_patterns.behavioral.strategy;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoadBalancer {
 
-  Map<String, Server> servers;
+  List<Server> servers;
   String strategy;
   ILoadBalancerStrategy loadBalancerStrategy;
 
-  LoadBalancer(Map<String, Server> servers, String strategy) {
-    Map<String, Server> serversMap = new LinkedHashMap<>(servers);
+  LoadBalancer(List<Server> servers, String strategy) {
+    List<Server> serversList = new ArrayList<>(servers);
     ILoadBalancerStrategy loadBalancerStrategy =
-        LoadBalancerStrategyFactory.getStrategy(strategy, serversMap);
+        LoadBalancerStrategyFactory.getStrategy(strategy, serversList);
     this.loadBalancerStrategy = loadBalancerStrategy;
-    this.servers = serversMap;
+    this.servers = serversList;
     this.strategy = strategy;
   }
 
-  public synchronized void updateLoadBalancer(Map<String, Server> servers, String strategy) {
-    Map<String, Server> serversMap = new LinkedHashMap<>(servers);
+  public synchronized void updateLoadBalancer(List<Server> servers, String strategy) {
+    List<Server> serversList = new ArrayList<>(servers);
     ILoadBalancerStrategy loadBalancerStrategy =
-        LoadBalancerStrategyFactory.getStrategy(strategy, serversMap);
+        LoadBalancerStrategyFactory.getStrategy(strategy, serversList);
     this.loadBalancerStrategy = loadBalancerStrategy;
-    this.servers = serversMap;
+    this.servers = serversList;
     this.strategy = strategy;
   }
 
-  public synchronized Map<String, Server> getServers() {
+  public synchronized List<Server> getServers() {
     return servers;
   }
 
