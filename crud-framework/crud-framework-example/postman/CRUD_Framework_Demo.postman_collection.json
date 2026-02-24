@@ -1,0 +1,710 @@
+{
+  "info": {
+    "name": "CRUD Framework Demo",
+    "description": "Complete Postman collection for testing the Generic CRUD Framework example application.\n\nDemo Users:\n- admin/admin — All permissions\n- editor/editor — Read + write (no delete)\n- viewer/viewer — Read only\n\nBase URL: http://localhost:8080",
+    "_postman_id": "crud-framework-demo-collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{username}}", "type": "string" },
+      { "key": "password", "value": "{{password}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin" }
+  ],
+  "item": [
+    {
+      "name": "Health & Metadata",
+      "item": [
+        {
+          "name": "Health Check (no auth)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/crud/health", "host": ["{{baseUrl}}"], "path": ["api", "crud", "health"] }
+          }
+        },
+        {
+          "name": "List Registered Entities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/crud/entities", "host": ["{{baseUrl}}"], "path": ["api", "crud", "entities"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product — GET Operations",
+      "item": [
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Product by ID — Summary Projection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 1,\n  \"projectionType\": \"summary\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Product by ID — Detail Projection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 2,\n  \"projectionType\": \"detail\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Product by ID — Inventory Projection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 3,\n  \"projectionType\": \"inventory\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get All Products (no pagination)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Products — Paginated (page 0, size 3)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\",\n  \"page\": 0,\n  \"size\": 3\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Products — Paginated (page 1, size 3)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\",\n  \"page\": 1,\n  \"size\": 3\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Products — Filter by Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\",\n  \"filters\": {\n    \"category\": \"Electronics\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Products — Filter by Status",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"status\": \"active\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Products — Sorted by Price DESC",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\",\n  \"sortBy\": \"price\",\n  \"sortDirection\": \"DESC\",\n  \"page\": 0,\n  \"size\": 5\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Products — Combined Filter + Sort + Paginate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"detail\",\n  \"filters\": {\n    \"category\": \"Electronics\",\n    \"status\": \"active\"\n  },\n  \"sortBy\": \"price\",\n  \"sortDirection\": \"ASC\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product — CREATE Operations",
+      "item": [
+        {
+          "name": "Create Product — Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Bluetooth Speaker\",\n    \"description\": \"Portable waterproof Bluetooth speaker\",\n    \"price\": 45.99,\n    \"category\": \"Electronics\",\n    \"status\": \"active\",\n    \"stockQuantity\": 120\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Product — Missing Required Fields (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Incomplete Product\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Product — Price Too Low (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Cheap Item\",\n    \"price\": 0.001,\n    \"category\": \"Electronics\",\n    \"status\": \"active\",\n    \"stockQuantity\": 10\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Product — Invalid Status Pattern (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Bad Status Product\",\n    \"price\": 15.00,\n    \"category\": \"Electronics\",\n    \"status\": \"INVALID_STATUS\",\n    \"stockQuantity\": 5\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Product — Unknown Field (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Product With Extra\",\n    \"price\": 19.99,\n    \"category\": \"Electronics\",\n    \"status\": \"active\",\n    \"stockQuantity\": 10,\n    \"unknownField\": \"should fail\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Product — Business Rule Violation: Discontinued + High Price (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Expensive Discontinued\",\n    \"price\": 999.99,\n    \"category\": \"Electronics\",\n    \"status\": \"discontinued\",\n    \"stockQuantity\": 0\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Product — Name Exceeds Max Length (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"price\": 10.00,\n    \"category\": \"Test\",\n    \"status\": \"active\",\n    \"stockQuantity\": 1\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product — UPDATE Operations",
+      "item": [
+        {
+          "name": "Update Product Price",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"UPDATE\",\n  \"id\": 1,\n  \"payload\": {\n    \"price\": 34.99\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Product Multiple Fields",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"UPDATE\",\n  \"id\": 2,\n  \"payload\": {\n    \"price\": 94.99,\n    \"stockQuantity\": 50,\n    \"description\": \"Updated RGB mechanical keyboard with Cherry MX Blue switches\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Product — Non-existent ID (expect 404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"UPDATE\",\n  \"id\": 9999,\n  \"payload\": {\n    \"price\": 10.00\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Product — Missing ID (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"UPDATE\",\n  \"payload\": {\n    \"price\": 10.00\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Product — Empty Payload (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"UPDATE\",\n  \"id\": 1,\n  \"payload\": {}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product — DELETE Operations",
+      "item": [
+        {
+          "name": "Delete Product (soft delete)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"DELETE\",\n  \"id\": 6\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Delete Product — Non-existent ID (expect 404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"DELETE\",\n  \"id\": 9999\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Verify Soft-Deleted Product Not Returned",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 6\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer — CRUD Operations",
+      "item": [
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Customers — Summary Projection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Customers — Contact Projection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"contact\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Customers — Filter by Country",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"full\",\n  \"filters\": {\n    \"country\": \"USA\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Customers — Sorted by Last Name",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\",\n  \"sortBy\": \"lastName\",\n  \"sortDirection\": \"ASC\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Customer — Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"firstName\": \"Maria\",\n    \"lastName\": \"Santos\",\n    \"email\": \"maria.santos@example.com\",\n    \"phone\": \"+55-11-9876-5432\",\n    \"address\": \"Rua das Flores 123\",\n    \"city\": \"São Paulo\",\n    \"country\": \"Brazil\",\n    \"status\": \"active\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Customer — Invalid Email (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"firstName\": \"Bad\",\n    \"lastName\": \"Email\",\n    \"email\": \"not-an-email\",\n    \"country\": \"USA\",\n    \"status\": \"active\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Customer — Suspended Without Phone (expect 400 — business rule)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"firstName\": \"No\",\n    \"lastName\": \"Phone\",\n    \"email\": \"nophone@example.com\",\n    \"country\": \"USA\",\n    \"status\": \"suspended\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Customer Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"UPDATE\",\n  \"id\": 1,\n  \"payload\": {\n    \"email\": \"john.doe.updated@example.com\",\n    \"phone\": \"+1-555-0199\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"DELETE\",\n  \"id\": 4\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RBAC — Permission Tests",
+      "item": [
+        {
+          "name": "Viewer: GET Product (expect 200)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "viewer", "type": "string" },
+                { "key": "password", "value": "viewer", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Viewer: CREATE Product (expect 403 — no write permission)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "viewer", "type": "string" },
+                { "key": "password", "value": "viewer", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Should Fail\",\n    \"price\": 10.00,\n    \"category\": \"Test\",\n    \"status\": \"active\",\n    \"stockQuantity\": 1\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Viewer: DELETE Product (expect 403 — no admin permission)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "viewer", "type": "string" },
+                { "key": "password", "value": "viewer", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"DELETE\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Editor: CREATE Product (expect 200 — has write permission)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "editor", "type": "string" },
+                { "key": "password", "value": "editor", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"Editor Created Product\",\n    \"price\": 25.00,\n    \"category\": \"Test\",\n    \"status\": \"active\",\n    \"stockQuantity\": 5\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Editor: DELETE Product (expect 403 — no admin permission)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "editor", "type": "string" },
+                { "key": "password", "value": "editor", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"DELETE\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Admin: DELETE Product (expect 200 — has admin permission)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"DELETE\",\n  \"id\": 8\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "No Auth: Any Operation (expect 401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Invalid Entity Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"nonexistent\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Invalid Operation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"PATCH\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Missing entityType",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Missing operation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "CREATE with Empty Payload",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"CREATE\",\n  \"payload\": {}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "GET Non-existent Entity by ID (expect 404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 99999\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    }
+  ]
+}
