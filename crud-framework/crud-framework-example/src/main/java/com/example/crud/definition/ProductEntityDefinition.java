@@ -4,6 +4,8 @@ import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
 import com.framework.crud.model.ManyToManyRelation;
+import com.framework.crud.model.FilterPermission;
+import com.framework.crud.model.PermissionConfig;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 import org.springframework.stereotype.Component;
@@ -114,13 +116,18 @@ public class ProductEntityDefinition implements EntityDefinition<ProductEntityDe
     }
 
     @Override
-    public Map<CrudOperation, String> getRequiredPermissions() {
-        return Map.of(
-                CrudOperation.GET, "product:read",
-                CrudOperation.CREATE, "product:write",
-                CrudOperation.UPDATE, "product:write",
-                CrudOperation.DELETE, "product:admin"
-        );
+    public PermissionConfig getPermissionConfig() {
+        return PermissionConfig.builder()
+                .listPermission("ListProduct")
+                .getPermission("GetProduct")
+                .createPermission("CreateProduct")
+                .updatePermission("UpdateProduct")
+                .deletePermission("DeleteProduct")
+                .filterPermission(
+                        FilterPermission.of(Set.of("category"), "ListProductsByCategory")
+                                .description("List products filtered by category")
+                )
+                .build();
     }
 
     @Override
@@ -146,6 +153,9 @@ public class ProductEntityDefinition implements EntityDefinition<ProductEntityDe
                         .junctionTable("product_tags")
                         .sourceJoinColumn("product_id")
                         .targetJoinColumn("tag_id")
+                        .getPermission("ListProductTags")
+                        .addPermission("AddTagToProduct")
+                        .removePermission("RemoveTagFromProduct")
                         .build()
         );
     }

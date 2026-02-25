@@ -19,6 +19,9 @@ package com.framework.crud.model;
  *     .junctionTable("product_tags")
  *     .sourceJoinColumn("product_id")
  *     .targetJoinColumn("tag_id")
+ *     .getPermission("ListProductTags")
+ *     .addPermission("AddTagToProduct")
+ *     .removePermission("RemoveTagFromProduct")
  *     .build();
  * </pre>
  */
@@ -39,12 +42,24 @@ public class ManyToManyRelation {
     /** Column in the junction table that references the TARGET entity's PK (e.g. "tag_id"). */
     private final String targetJoinColumn;
 
+    /** Permission required for GET (listing) related entities through this relation. Optional. */
+    private final String getPermission;
+
+    /** Permission required for ADD (creating a junction row). Optional. */
+    private final String addPermission;
+
+    /** Permission required for REMOVE (deleting a junction row). Optional. */
+    private final String removePermission;
+
     private ManyToManyRelation(Builder builder) {
         this.relationName = builder.relationName;
         this.targetEntityType = builder.targetEntityType;
         this.junctionTable = builder.junctionTable;
         this.sourceJoinColumn = builder.sourceJoinColumn;
         this.targetJoinColumn = builder.targetJoinColumn;
+        this.getPermission = builder.getPermission;
+        this.addPermission = builder.addPermission;
+        this.removePermission = builder.removePermission;
     }
 
     // ---- Getters ----
@@ -69,6 +84,18 @@ public class ManyToManyRelation {
         return targetJoinColumn;
     }
 
+    public String getGetPermission() {
+        return getPermission;
+    }
+
+    public String getAddPermission() {
+        return addPermission;
+    }
+
+    public String getRemovePermission() {
+        return removePermission;
+    }
+
     // ---- Builder ----
 
     public static Builder builder() {
@@ -81,6 +108,9 @@ public class ManyToManyRelation {
         private String junctionTable;
         private String sourceJoinColumn;
         private String targetJoinColumn;
+        private String getPermission;
+        private String addPermission;
+        private String removePermission;
 
         public Builder relationName(String relationName) {
             this.relationName = relationName;
@@ -104,6 +134,21 @@ public class ManyToManyRelation {
 
         public Builder targetJoinColumn(String targetJoinColumn) {
             this.targetJoinColumn = targetJoinColumn;
+            return this;
+        }
+
+        public Builder getPermission(String getPermission) {
+            this.getPermission = getPermission;
+            return this;
+        }
+
+        public Builder addPermission(String addPermission) {
+            this.addPermission = addPermission;
+            return this;
+        }
+
+        public Builder removePermission(String removePermission) {
+            this.removePermission = removePermission;
             return this;
         }
 

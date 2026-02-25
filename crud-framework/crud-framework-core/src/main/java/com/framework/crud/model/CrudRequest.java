@@ -1,5 +1,8 @@
 package com.framework.crud.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import java.util.Map;
 
 /**
@@ -30,7 +33,7 @@ public class CrudRequest {
     private String entityType;
 
     /** The CRUD operation: GET, CREATE, UPDATE, DELETE. */
-    private String operation;
+    private CrudOperation operation;
 
     /** Primary key value. Required for GET (single), UPDATE, DELETE. */
     private Object id;
@@ -71,12 +74,22 @@ public class CrudRequest {
         this.entityType = entityType;
     }
 
-    public String getOperation() {
+    public CrudOperation getOperation() {
         return operation;
     }
 
-    public void setOperation(String operation) {
+    @JsonIgnore
+    public void setOperation(CrudOperation operation) {
         this.operation = operation;
+    }
+
+    /**
+     * Accept a string value for the operation field (used during JSON deserialization).
+     * Parses the string to {@link CrudOperation} via {@link CrudOperation#fromString(String)}.
+     */
+    @JsonSetter("operation")
+    public void setOperation(String operation) {
+        this.operation = CrudOperation.fromString(operation);
     }
 
     public Object getId() {
@@ -144,9 +157,15 @@ public class CrudRequest {
     }
 
     /**
-     * Resolve the CrudOperation enum from the string operation field.
+     * Resolve the CrudOperation enum from the operation field.
+     *
+     * @return the operation, never null
+     * @throws IllegalArgumentException if operation has not been set
      */
     public CrudOperation resolveOperation() {
-        return CrudOperation.fromString(this.operation);
+        if (this.operation == null) {
+            throw new IllegalArgumentException("Operation must not be null or blank");
+        }
+        return this.operation;
     }
 }

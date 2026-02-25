@@ -79,8 +79,8 @@ public class CrudService {
         log.info("Processing {} on entity '{}' (table: {})",
                 operation, definition.getEntityType(), definition.getTableName());
 
-        // 3. Permission check
-        permissionService.checkAccess(definition, operation);
+        // 3. Permission check (LIST vs GET distinction + filter-based permissions)
+        permissionService.checkAccess(definition, operation, request.getId(), request.getFilters());
 
         // 4. Dispatch to operation handler
         return switch (operation) {
@@ -104,7 +104,9 @@ public class CrudService {
 
             eventPublisher.publishPost(definition.getEntityType(), CrudOperation.GET,
                     request.getId(), null);
-            auditService.audit(definition.getEntityType(), CrudOperation.GET, request.getId(), null);
+            auditService.auditQuery(definition.getEntityType(), request.getId(),
+                    null, request.getProjectionType(),
+                    null, null, null, null);
 
             return CrudResponse.success("Entity retrieved successfully", data);
         } else {
@@ -123,7 +125,10 @@ public class CrudService {
                 totalCount = repository.count(definition, request.getFilters());
             }
 
-            auditService.audit(definition.getEntityType(), CrudOperation.GET, null, request.getFilters());
+            auditService.auditQuery(definition.getEntityType(), null,
+                    request.getFilters(), request.getProjectionType(),
+                    request.getSortBy(), request.getSortDirection(),
+                    request.getPage(), request.getSize());
 
             return CrudResponse.successList(
                     "Entities retrieved successfully",
@@ -245,7 +250,7 @@ public class CrudService {
         if (request.getEntityType() == null || request.getEntityType().isBlank()) {
             throw new IllegalArgumentException("entityType is required");
         }
-        if (request.getOperation() == null || request.getOperation().isBlank()) {
+        if (request.getOperation() == null) {
             throw new IllegalArgumentException("operation is required");
         }
     }

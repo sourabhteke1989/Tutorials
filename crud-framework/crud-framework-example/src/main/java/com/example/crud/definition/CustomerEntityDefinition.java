@@ -4,6 +4,7 @@ import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
 import com.framework.crud.model.IdType;
+import com.framework.crud.model.PermissionConfig;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 import org.springframework.stereotype.Component;
@@ -136,13 +137,14 @@ public class CustomerEntityDefinition implements EntityDefinition<CustomerEntity
     }
 
     @Override
-    public Map<CrudOperation, String> getRequiredPermissions() {
-        return Map.of(
-                CrudOperation.GET, "customer:read",
-                CrudOperation.CREATE, "customer:write",
-                CrudOperation.UPDATE, "customer:write",
-                CrudOperation.DELETE, "customer:admin"
-        );
+    public PermissionConfig getPermissionConfig() {
+        return PermissionConfig.builder()
+                .listPermission("ListCustomer")
+                .getPermission("GetCustomer")
+                .createPermission("CreateCustomer")
+                .updatePermission("UpdateCustomer")
+                .deletePermission("DeleteCustomer")
+                .build();
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
 import com.framework.crud.model.ManyToManyRelation;
+import com.framework.crud.model.PermissionConfig;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 import org.springframework.stereotype.Component;
@@ -90,13 +91,14 @@ public class TagEntityDefinition implements EntityDefinition<TagEntityDefinition
     }
 
     @Override
-    public Map<CrudOperation, String> getRequiredPermissions() {
-        return Map.of(
-                CrudOperation.GET,    "product:read",
-                CrudOperation.CREATE, "product:write",
-                CrudOperation.UPDATE, "product:write",
-                CrudOperation.DELETE, "product:admin"
-        );
+    public PermissionConfig getPermissionConfig() {
+        return PermissionConfig.builder()
+                .listPermission("ListTag")
+                .getPermission("GetTag")
+                .createPermission("CreateTag")
+                .updatePermission("UpdateTag")
+                .deletePermission("DeleteTag")
+                .build();
     }
 
     @Override
@@ -109,6 +111,9 @@ public class TagEntityDefinition implements EntityDefinition<TagEntityDefinition
                         .junctionTable("product_tags")
                         .sourceJoinColumn("tag_id")
                         .targetJoinColumn("product_id")
+                        .getPermission("ListTaggedProducts")
+                        .addPermission("AssociateProductWithTag")
+                        .removePermission("DetachProductFromTag")
                         .build()
         );
     }

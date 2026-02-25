@@ -4,6 +4,7 @@ import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
 import com.framework.crud.model.IdType;
 import com.framework.crud.model.ManyToManyRelation;
+import com.framework.crud.model.PermissionConfig;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 
@@ -134,23 +135,31 @@ public interface EntityDefinition<T> {
     }
 
     /**
-     * Required permission strings per operation.
+     * Comprehensive permission configuration for this entity.
      * <p>
-     * The framework checks that the current user has the required permission
-     * before executing the operation.
+     * Defines named permissions for each operation (LIST, GET, CREATE, UPDATE, DELETE)
+     * plus optional filter-based permissions for fine-grained access control on LIST
+     * operations.
+     * <p>
+     * A GET operation without an ID is treated as a <b>LIST</b> operation and requires
+     * the {@code listPermission}. A GET with an ID requires the {@code getPermission}.
      * <p>
      * Example:
      * <pre>
-     * Map.of(
-     *   CrudOperation.GET,    "product:read",
-     *   CrudOperation.CREATE, "product:write",
-     *   CrudOperation.UPDATE, "product:write",
-     *   CrudOperation.DELETE, "product:admin"
-     * )
+     * return PermissionConfig.builder()
+     *     .listPermission("ListProduct")
+     *     .getPermission("GetProduct")
+     *     .createPermission("CreateProduct")
+     *     .updatePermission("UpdateProduct")
+     *     .deletePermission("DeleteProduct")
+     *     .build();
      * </pre>
+     *
+     * @see PermissionConfig
+     * @see com.framework.crud.model.FilterPermission
      */
-    default Map<CrudOperation, String> getRequiredPermissions() {
-        return Collections.emptyMap();
+    default PermissionConfig getPermissionConfig() {
+        return PermissionConfig.empty();
     }
 
     /**
