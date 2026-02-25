@@ -2,8 +2,10 @@ package com.framework.crud.controller;
 
 import com.framework.crud.model.CrudRequest;
 import com.framework.crud.model.CrudResponse;
+import com.framework.crud.model.RelationRequest;
 import com.framework.crud.registry.EntityRegistry;
 import com.framework.crud.service.CrudService;
+import com.framework.crud.service.RelationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
  * <p>
  * Additionally provides:
  * <ul>
+ *   <li>{@code POST /api/crud/relation} — query many-to-many related entities</li>
  *   <li>{@code GET /api/crud/entities} — list all registered entity types</li>
  *   <li>{@code GET /api/crud/health} — health check</li>
  * </ul>
@@ -29,10 +32,12 @@ import java.util.stream.Collectors;
 public class CrudController {
 
     private final CrudService crudService;
+    private final RelationService relationService;
     private final EntityRegistry entityRegistry;
 
-    public CrudController(CrudService crudService, EntityRegistry entityRegistry) {
+    public CrudController(CrudService crudService, RelationService relationService, EntityRegistry entityRegistry) {
         this.crudService = crudService;
+        this.relationService = relationService;
         this.entityRegistry = entityRegistry;
     }
 
@@ -42,6 +47,21 @@ public class CrudController {
     @PostMapping
     public ResponseEntity<CrudResponse> execute(@RequestBody CrudRequest request) {
         CrudResponse response = crudService.process(request);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Many-to-many relation endpoint.
+     * Queries related entities through a junction table.
+     */
+    @PostMapping("/relation")
+    public ResponseEntity<CrudResponse> queryRelation(@RequestBody RelationRequest request) {
+        CrudResponse response = relationService.processRelation(request);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);

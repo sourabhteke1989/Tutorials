@@ -3,6 +3,7 @@ package com.example.crud.definition;
 import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
+import com.framework.crud.model.IdType;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 import org.springframework.stereotype.Component;
@@ -10,12 +11,14 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Entity definition for "customer".
  * <p>
  * Demonstrates:
  * <ul>
+ *   <li>UUID-based primary key (instead of auto-increment)</li>
  *   <li>Email pattern validation</li>
  *   <li>Read-only fields (createdAt not updatable)</li>
  *   <li>Custom cross-field validation</li>
@@ -28,7 +31,7 @@ public class CustomerEntityDefinition implements EntityDefinition<CustomerEntity
     // ---- Entity POJO ----
 
     public static class Customer {
-        private Long id;
+        private UUID id;
         private String firstName;
         private String lastName;
         private String email;
@@ -38,8 +41,8 @@ public class CustomerEntityDefinition implements EntityDefinition<CustomerEntity
         private String country;
         private String status;
 
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
+        public UUID getId() { return id; }
+        public void setId(UUID id) { this.id = id; }
         public String getFirstName() { return firstName; }
         public void setFirstName(String firstName) { this.firstName = firstName; }
         public String getLastName() { return lastName; }
@@ -145,6 +148,11 @@ public class CustomerEntityDefinition implements EntityDefinition<CustomerEntity
     @Override
     public Set<CrudOperation> getAllowedOperations() {
         return Set.of(CrudOperation.GET, CrudOperation.CREATE, CrudOperation.UPDATE, CrudOperation.DELETE);
+    }
+
+    @Override
+    public IdType getIdType() {
+        return IdType.UUID;
     }
 
     @Override

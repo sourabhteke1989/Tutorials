@@ -382,7 +382,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"GET\",\n  \"id\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
           }
@@ -472,13 +472,25 @@
           }
         },
         {
+          "name": "Create Customer — Duplicate Email (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"firstName\": \"Duplicate\",\n    \"lastName\": \"User\",\n    \"email\": \"john.doe@example.com\",\n    \"country\": \"USA\",\n    \"status\": \"active\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
           "name": "Update Customer Email",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"UPDATE\",\n  \"id\": 1,\n  \"payload\": {\n    \"email\": \"john.doe.updated@example.com\",\n    \"phone\": \"+1-555-0199\"\n  }\n}"
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"UPDATE\",\n  \"id\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\n  \"payload\": {\n    \"email\": \"john.doe.updated@example.com\",\n    \"phone\": \"+1-555-0199\"\n  }\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
           }
@@ -490,7 +502,283 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"DELETE\",\n  \"id\": 4\n}"
+              "raw": "{\n  \"entityType\": \"customer\",\n  \"operation\": \"DELETE\",\n  \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CustomerProfile — CRUD Operations (One-to-One)",
+      "description": "Demonstrates ONE-TO-ONE relationship: each Customer has exactly one CustomerProfile linked via customer_id FK.",
+      "item": [
+        {
+          "name": "Get All Customer Profiles",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"GET\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Profile by ID",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "One-to-One: Get Profile for Customer (John Doe)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "One-to-One: Get Profile for Customer (Carlos Garcia) — Summary",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\",\n  \"filters\": {\n    \"customerId\": \"e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Profiles — Filter by Loyalty Tier (gold)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"loyaltyTier\": \"gold\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Customer Profile — Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"customerId\": \"b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e\",\n    \"bio\": \"A new profile for Jane Smith\",\n    \"loyaltyTier\": \"silver\",\n    \"totalOrders\": 10\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Customer Profile — Duplicate customerId (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\n    \"bio\": \"Duplicate profile\",\n    \"loyaltyTier\": \"bronze\",\n    \"totalOrders\": 0\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Customer Profile — Platinum with Low Orders (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"customerId\": \"c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f\",\n    \"loyaltyTier\": \"platinum\",\n    \"totalOrders\": 5\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Customer Profile — Upgrade Loyalty Tier",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"customer_profile\",\n  \"operation\": \"UPDATE\",\n  \"id\": 1,\n  \"payload\": {\n    \"loyaltyTier\": \"platinum\",\n    \"totalOrders\": 30\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order — CRUD Operations (One-to-Many)",
+      "description": "Demonstrates ONE-TO-MANY relationship: each Customer can have multiple Orders linked via customer_id FK.",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "One-to-Many: Get Orders for Customer (John Doe — 3 orders)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "One-to-Many: Get Orders for Customer (Jane Smith — 2 orders)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"customerId\": \"b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "One-to-Many: Orders for Customer + Filter by Status (delivered)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\n    \"status\": \"delivered\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "One-to-Many: Orders Sorted by Total Amount DESC + Paginated",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\"\n  },\n  \"sortBy\": \"totalAmount\",\n  \"sortDirection\": \"DESC\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Orders — Filter by Status (pending)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"filters\": {\n    \"status\": \"pending\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Orders — Summary Projection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"GET\",\n  \"projectionType\": \"summary\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Order — Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\n    \"orderNumber\": \"ORD-2026-0099\",\n    \"totalAmount\": 79.99,\n    \"status\": \"pending\",\n    \"shippingAddress\": \"123 Main St, New York, USA\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Order — Duplicate Order Number (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"customerId\": \"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\n    \"orderNumber\": \"ORD-2026-0001\",\n    \"totalAmount\": 50.00,\n    \"status\": \"pending\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Order — Cancelled with Non-Zero Amount (expect 400 — business rule)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"customerId\": \"b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e\",\n    \"orderNumber\": \"ORD-2026-0100\",\n    \"totalAmount\": 99.99,\n    \"status\": \"cancelled\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"UPDATE\",\n  \"id\": 3,\n  \"payload\": {\n    \"status\": \"confirmed\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"order\",\n  \"operation\": \"DELETE\",\n  \"id\": 8\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
           }
@@ -702,6 +990,364 @@
               "raw": "{\n  \"entityType\": \"product\",\n  \"operation\": \"GET\",\n  \"id\": 99999\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tag — CRUD Operations",
+      "item": [
+        {
+          "name": "Get All Tags",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"GET\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Get Tag by ID",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"GET\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Tag — Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"bestseller\",\n    \"color\": \"#FF5733\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Tag — Duplicate Name (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"electronics\",\n    \"color\": \"#000000\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Create Tag — Invalid Color Pattern (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"CREATE\",\n  \"payload\": {\n    \"name\": \"broken-color\",\n    \"color\": \"red\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Update Tag",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"UPDATE\",\n  \"id\": 1,\n  \"payload\": {\n    \"color\": \"#1ABC9C\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"operation\": \"DELETE\",\n  \"id\": 5\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud", "host": ["{{baseUrl}}"], "path": ["api", "crud"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Many-to-Many Relations",
+      "item": [
+        {
+          "name": "Get Tags for Product (id=1, Wireless Mouse)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product (id=2, Mechanical Keyboard)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product — Sorted by Name ASC",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"sortBy\": \"name\",\n  \"sortDirection\": \"ASC\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product — Paginated",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"page\": 0,\n  \"size\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product — Filter by Color",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"filters\": {\n    \"color\": \"#3498DB\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product — Filter by Name",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 2,\n  \"filters\": {\n    \"name\": \"ergonomic\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Products for Tag — Filter by Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 1,\n  \"filters\": {\n    \"category\": \"Electronics\"\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Products for Tag — Filter + Sort + Paginate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 1,\n  \"filters\": {\n    \"category\": \"Electronics\"\n  },\n  \"sortBy\": \"price\",\n  \"sortDirection\": \"DESC\",\n  \"page\": 0,\n  \"size\": 5\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product — Projection: summary (id + name only)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"projectionType\": \"summary\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Products for Tag — Projection: summary (id + name + price + status)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 1,\n  \"projectionType\": \"summary\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Products for Tag — Projection: inventory",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 1,\n  \"projectionType\": \"inventory\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Tags for Product — Filter + Projection + Sort",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 2,\n  \"filters\": {\n    \"color\": \"#E74C3C\"\n  },\n  \"projectionType\": \"summary\",\n  \"sortBy\": \"name\",\n  \"sortDirection\": \"ASC\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Products for Tag (id=1, electronics) — Reverse",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Get Products for Tag (id=2, sale) — Reverse",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "ADD — Add Tags to Product (id=1)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"operation\": \"ADD\",\n  \"relatedIds\": [4, 5]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "ADD — Add Products to Tag (id=3, reverse direction)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"tag\",\n  \"relationName\": \"products\",\n  \"id\": 3,\n  \"operation\": \"ADD\",\n  \"relatedIds\": [1, 2, 3]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "REMOVE — Remove Tag from Product (id=1)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"operation\": \"REMOVE\",\n  \"relatedIds\": [5]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Verify after ADD/REMOVE — Get Tags for Product (id=1)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "ADD — Missing relatedIds (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"operation\": \"ADD\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "REMOVE — Empty relatedIds (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\",\n  \"id\": 1,\n  \"operation\": \"REMOVE\",\n  \"relatedIds\": []\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Relation — Unknown Relation Name (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"categories\",\n  \"id\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
+          }
+        },
+        {
+          "name": "Relation — Missing ID (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"product\",\n  \"relationName\": \"tags\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/crud/relation", "host": ["{{baseUrl}}"], "path": ["api", "crud", "relation"] }
           }
         }
       ]

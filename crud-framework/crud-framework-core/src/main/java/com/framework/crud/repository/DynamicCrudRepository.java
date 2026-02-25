@@ -3,6 +3,8 @@ package com.framework.crud.repository;
 import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.exception.EntityNotFoundException;
 import com.framework.crud.model.FieldDefinition;
+import com.framework.crud.model.IdType;
+import com.framework.crud.model.ManyToManyRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -126,12 +128,26 @@ public class DynamicCrudRepository {
     // =========================================================================
 
     public Map<String, Object> insert(EntityDefinition<?> def, Map<String, Object> payload) {
+        boolean isUuid = def.getIdType() == IdType.UUID;
+        java.util.UUID generatedUuid = null;
+
+        // For UUID strategy, generate the ID before INSERT
+        if (isUuid) {
+            generatedUuid = java.util.UUID.randomUUID();
+            payload.put(def.getIdField(), generatedUuid);
+        }
+
         // Filter to only insertable fields
         Map<String, String> fieldToColumn = def.getFieldDefinitions().stream()
                 .filter(FieldDefinition::isInsertable)
                 .filter(f -> payload.containsKey(f.getFieldName()))
                 .collect(Collectors.toMap(FieldDefinition::getFieldName, FieldDefinition::getColumnName,
                         (a, b) -> a, LinkedHashMap::new));
+
+        // For UUID, explicitly include the ID column in the INSERT
+        if (isUuid) {
+            fieldToColumn.put(def.getIdField(), def.getIdColumn());
+        }
 
         if (fieldToColumn.isEmpty()) {
             throw new IllegalArgumentException("No insertable fields provided in payload");
@@ -165,32 +181,40 @@ public class DynamicCrudRepository {
 
         log.debug("insert SQL: {}", sql);
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbc.update(sql, params, keyHolder);
-
-        // Try to return the generated ID
-        Object generatedId = null;
-        if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {
-            // Take the first key
-            generatedId = keyHolder.getKeys().values().iterator().next();
-        } else if (keyHolder.getKey() != null) {
-            generatedId = keyHolder.getKey();
-        }
-
-        // Fetch and return the created record
-        if (generatedId != null) {
+        if (isUuid) {
+            // UUID strategy: ID is already in the payload, no need for KeyHolder
+            jdbc.update(sql, params);
             try {
-                return findById(def, generatedId, null);
+                return findById(def, generatedUuid, null);
             } catch (EntityNotFoundException e) {
-                // Fallback — return the payload with the generated ID
                 Map<String, Object> result = new LinkedHashMap<>(payload);
-                result.put(def.getIdField(), generatedId);
+                result.put(def.getIdField(), generatedUuid);
                 return result;
             }
-        }
+        } else {
+            // AUTO_INCREMENT strategy: use KeyHolder to retrieve generated ID
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbc.update(sql, params, keyHolder);
 
-        // If no generated key, return payload as-is
-        return new LinkedHashMap<>(payload);
+            Object generatedId = null;
+            if (keyHolder.getKeys() != null && !keyHolder.getKeys().isEmpty()) {
+                generatedId = keyHolder.getKeys().values().iterator().next();
+            } else if (keyHolder.getKey() != null) {
+                generatedId = keyHolder.getKey();
+            }
+
+            if (generatedId != null) {
+                try {
+                    return findById(def, generatedId, null);
+                } catch (EntityNotFoundException e) {
+                    Map<String, Object> result = new LinkedHashMap<>(payload);
+                    result.put(def.getIdField(), generatedId);
+                    return result;
+                }
+            }
+
+            return new LinkedHashMap<>(payload);
+        }
     }
 
     // =========================================================================
@@ -395,6 +419,233 @@ public class DynamicCrudRepository {
             return def.getIdColumn();
         }
         return null;
+    }
+
+    // =========================================================================
+    // MANY-TO-MANY RELATION QUERY
+    // =========================================================================
+
+    /**
+     * Fetch target-entity rows related to a source entity via a junction table.
+     * <p>
+     * Generates SQL of the form:
+     * <pre>
+     * SELECT t.col1, t.col2, ...
+     * FROM target_table t
+     * JOIN junction_table j ON t.target_pk = j.target_join_col
+     * WHERE j.source_join_col = :sourceId
+     * [ORDER BY ...] [LIMIT ... OFFSET ...]
+     * </pre>
+     */
+    public List<Map<String, Object>> findByRelation(EntityDefinition<?> targetDef,
+                                                     ManyToManyRelation relation,
+                                                     Object sourceId,
+                                                     Map<String, Object> filters,
+                                                     List<String> projectionColumns,
+                                                     String sortBy,
+                                                     String sortDirection,
+                                                     Integer page,
+                                                     Integer size) {
+
+        String targetTable = sanitizeIdentifier(targetDef.getTableName());
+        String junctionTable = sanitizeIdentifier(relation.getJunctionTable());
+        String sourceJoinCol = sanitizeIdentifier(relation.getSourceJoinColumn());
+        String targetJoinCol = sanitizeIdentifier(relation.getTargetJoinColumn());
+        String targetPk = sanitizeIdentifier(targetDef.getIdColumn());
+
+        // Build SELECT columns prefixed with 't.' (respecting projection)
+        String selectCols = buildPrefixedSelectColumns(targetDef, "t", projectionColumns);
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ").append(selectCols)
+           .append(" FROM ").append(targetTable).append(" t")
+           .append(" JOIN ").append(junctionTable).append(" j")
+           .append(" ON t.").append(targetPk).append(" = j.").append(targetJoinCol)
+           .append(" WHERE j.").append(sourceJoinCol).append(" = :sourceId");
+
+        // Soft-delete on target entity
+        if (targetDef.isSoftDeleteEnabled()) {
+            sql.append(" AND t.").append(sanitizeIdentifier(targetDef.getSoftDeleteColumn())).append(" = false");
+        }
+
+        MapSqlParameterSource params = new MapSqlParameterSource("sourceId", sourceId);
+
+        // Apply filters on target entity columns (with 't.' alias prefix)
+        List<String> filterConditions = buildWhereConditions(targetDef, filters, params);
+        for (String condition : filterConditions) {
+            sql.append(" AND t.").append(condition);
+        }
+
+        // ORDER BY
+        if (sortBy != null && !sortBy.isBlank()) {
+            String colName = resolveColumnName(targetDef, sortBy);
+            if (colName != null) {
+                String dir = "DESC".equalsIgnoreCase(sortDirection) ? "DESC" : "ASC";
+                sql.append(" ORDER BY t.").append(sanitizeIdentifier(colName)).append(" ").append(dir);
+            }
+        }
+
+        // PAGINATION
+        if (size != null && size > 0) {
+            int pageNum = (page != null && page >= 0) ? page : 0;
+            sql.append(" LIMIT :limit OFFSET :offset");
+            params.addValue("limit", size);
+            params.addValue("offset", pageNum * size);
+        }
+
+        log.debug("findByRelation SQL: {}", sql);
+        return jdbc.queryForList(sql.toString(), params);
+    }
+
+    /**
+     * Count the number of target-entity rows related to a source entity via a junction table.
+     */
+    public long countByRelation(EntityDefinition<?> targetDef,
+                                ManyToManyRelation relation,
+                                Object sourceId,
+                                Map<String, Object> filters) {
+
+        String targetTable = sanitizeIdentifier(targetDef.getTableName());
+        String junctionTable = sanitizeIdentifier(relation.getJunctionTable());
+        String sourceJoinCol = sanitizeIdentifier(relation.getSourceJoinColumn());
+        String targetJoinCol = sanitizeIdentifier(relation.getTargetJoinColumn());
+        String targetPk = sanitizeIdentifier(targetDef.getIdColumn());
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(*) FROM ").append(targetTable).append(" t")
+           .append(" JOIN ").append(junctionTable).append(" j")
+           .append(" ON t.").append(targetPk).append(" = j.").append(targetJoinCol)
+           .append(" WHERE j.").append(sourceJoinCol).append(" = :sourceId");
+
+        if (targetDef.isSoftDeleteEnabled()) {
+            sql.append(" AND t.").append(sanitizeIdentifier(targetDef.getSoftDeleteColumn())).append(" = false");
+        }
+
+        MapSqlParameterSource params = new MapSqlParameterSource("sourceId", sourceId);
+
+        // Apply filters on target entity columns (with 't.' alias prefix)
+        List<String> filterConditions = buildWhereConditions(targetDef, filters, params);
+        for (String condition : filterConditions) {
+            sql.append(" AND t.").append(condition);
+        }
+
+        log.debug("countByRelation SQL: {}", sql);
+        Long count = jdbc.queryForObject(sql.toString(), params, Long.class);
+        return count != null ? count : 0L;
+    }
+
+    /**
+     * Build SELECT columns prefixed with a table alias (e.g. "t.id, t.name, t.price").
+     * When {@code projectionColumns} is non-null, only those columns are included
+     * (the ID column is always included).
+     */
+    private String buildPrefixedSelectColumns(EntityDefinition<?> def, String alias,
+                                               List<String> projectionColumns) {
+        if (projectionColumns != null && !projectionColumns.isEmpty()) {
+            // Resolve projection columns the same way buildSelectColumns does,
+            // but prefix each with the table alias.
+            Set<String> knownColumns = def.getFieldDefinitions().stream()
+                    .map(FieldDefinition::getColumnName)
+                    .collect(Collectors.toSet());
+            Map<String, String> fieldToCol = def.getFieldDefinitions().stream()
+                    .collect(Collectors.toMap(FieldDefinition::getFieldName, FieldDefinition::getColumnName));
+
+            List<String> resolved = new ArrayList<>();
+            for (String col : projectionColumns) {
+                if (knownColumns.contains(col)) {
+                    resolved.add(alias + "." + sanitizeIdentifier(col));
+                } else if (fieldToCol.containsKey(col)) {
+                    resolved.add(alias + "." + sanitizeIdentifier(fieldToCol.get(col)));
+                }
+            }
+            // Always include the ID column
+            String idCol = alias + "." + sanitizeIdentifier(def.getIdColumn());
+            if (!resolved.contains(idCol)) {
+                resolved.add(0, idCol);
+            }
+            return String.join(", ", resolved);
+        }
+
+        // Default: all columns
+        List<String> cols = new ArrayList<>();
+        cols.add(alias + "." + sanitizeIdentifier(def.getIdColumn()));
+        for (FieldDefinition fd : def.getFieldDefinitions()) {
+            String col = alias + "." + sanitizeIdentifier(fd.getColumnName());
+            if (!cols.contains(col)) {
+                cols.add(col);
+            }
+        }
+        return String.join(", ", cols);
+    }
+
+    // =========================================================================
+    // MANY-TO-MANY ASSOCIATION MANAGEMENT (ADD / REMOVE)
+    // =========================================================================
+
+    /**
+     * Add associations between a source entity and one or more target entities
+     * by inserting rows into the junction table.
+     * <p>
+     * Generates SQL of the form:
+     * <pre>
+     * INSERT INTO junction_table (source_join_col, target_join_col)
+     * VALUES (:sourceId, :targetId)
+     * </pre>
+     * Duplicate rows are silently ignored (uses MERGE for H2 / INSERT IGNORE pattern).
+     *
+     * @return the number of rows actually inserted
+     */
+    public int addRelations(ManyToManyRelation relation, Object sourceId, List<Object> targetIds) {
+        String junctionTable = sanitizeIdentifier(relation.getJunctionTable());
+        String sourceCol = sanitizeIdentifier(relation.getSourceJoinColumn());
+        String targetCol = sanitizeIdentifier(relation.getTargetJoinColumn());
+
+        // Use MERGE to avoid duplicate-key errors (H2-compatible; for MySQL use INSERT IGNORE)
+        String sql = String.format(
+                "MERGE INTO %s (%s, %s) KEY (%s, %s) VALUES (:sourceId, :targetId)",
+                junctionTable, sourceCol, targetCol, sourceCol, targetCol);
+
+        int inserted = 0;
+        for (Object targetId : targetIds) {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("sourceId", sourceId);
+            params.addValue("targetId", targetId);
+            log.debug("addRelation SQL: {} params: sourceId={}, targetId={}", sql, sourceId, targetId);
+            inserted += jdbc.update(sql, params);
+        }
+        return inserted;
+    }
+
+    /**
+     * Remove associations between a source entity and one or more target entities
+     * by deleting rows from the junction table.
+     * <p>
+     * Generates SQL of the form:
+     * <pre>
+     * DELETE FROM junction_table
+     * WHERE source_join_col = :sourceId AND target_join_col = :targetId
+     * </pre>
+     *
+     * @return the number of rows actually deleted
+     */
+    public int removeRelations(ManyToManyRelation relation, Object sourceId, List<Object> targetIds) {
+        String junctionTable = sanitizeIdentifier(relation.getJunctionTable());
+        String sourceCol = sanitizeIdentifier(relation.getSourceJoinColumn());
+        String targetCol = sanitizeIdentifier(relation.getTargetJoinColumn());
+
+        String sql = String.format(
+                "DELETE FROM %s WHERE %s = :sourceId AND %s = :targetId",
+                junctionTable, sourceCol, targetCol);
+
+        int deleted = 0;
+        for (Object targetId : targetIds) {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("sourceId", sourceId);
+            params.addValue("targetId", targetId);
+            log.debug("removeRelation SQL: {} params: sourceId={}, targetId={}", sql, sourceId, targetId);
+            deleted += jdbc.update(sql, params);
+        }
+        return deleted;
     }
 
     /**
