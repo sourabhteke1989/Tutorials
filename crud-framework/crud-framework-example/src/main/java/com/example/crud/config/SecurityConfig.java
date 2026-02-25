@@ -17,12 +17,15 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * Security configuration for the example application.
  * <p>
- * Defines three demo users with different permission sets:
+ * Defines three demo users with different named permissions:
  * <ul>
- *   <li><b>admin/admin</b> — All permissions (product:*, customer:*)</li>
- *   <li><b>editor/editor</b> — Read + write (no admin/delete)</li>
- *   <li><b>viewer/viewer</b> — Read-only</li>
+ *   <li><b>admin/admin</b> — All permissions (full CRUD + relation operations)</li>
+ *   <li><b>editor/editor</b> — List, Get, Create, Update (no Delete, no Relation REMOVE)</li>
+ *   <li><b>viewer/viewer</b> — List and Get only (read-only access)</li>
  * </ul>
+ * <p>
+ * Permission naming convention: {@code <Action><EntityName>}
+ * (e.g., {@code ListProduct}, {@code CreateCustomer}, {@code AddTagToProduct}).
  */
 @Configuration
 @EnableWebSecurity
@@ -50,8 +53,24 @@ public class SecurityConfig {
                 .username("admin")
                 .password(encoder.encode("admin"))
                 .authorities(
-                        "product:read", "product:write", "product:admin",
-                        "customer:read", "customer:write", "customer:admin",
+                        // Customer CRUD
+                        "ListCustomer", "GetCustomer", "CreateCustomer", "UpdateCustomer", "DeleteCustomer",
+                        // Customer Profile CRUD
+                        "ListCustomerProfile", "GetCustomerProfile", "CreateCustomerProfile",
+                        "UpdateCustomerProfile", "DeleteCustomerProfile",
+                        // Order CRUD + filter permission
+                        "ListOrder", "GetOrder", "CreateOrder", "UpdateOrder", "DeleteOrder",
+                        "ListCustomerOrders",
+                        // Product CRUD + filter permission
+                        "ListProduct", "GetProduct", "CreateProduct", "UpdateProduct", "DeleteProduct",
+                        "ListProductsByCategory",
+                        // Tag CRUD
+                        "ListTag", "GetTag", "CreateTag", "UpdateTag", "DeleteTag",
+                        // Product ↔ Tag relation (product side)
+                        "ListProductTags", "AddTagToProduct", "RemoveTagFromProduct",
+                        // Product ↔ Tag relation (tag side)
+                        "ListTaggedProducts", "AssociateProductWithTag", "DetachProductFromTag",
+                        // Role
                         "ROLE_ADMIN")
                 .build();
 
@@ -59,8 +78,23 @@ public class SecurityConfig {
                 .username("editor")
                 .password(encoder.encode("editor"))
                 .authorities(
-                        "product:read", "product:write",
-                        "customer:read", "customer:write",
+                        // Customer — no delete
+                        "ListCustomer", "GetCustomer", "CreateCustomer", "UpdateCustomer",
+                        // Customer Profile — no delete
+                        "ListCustomerProfile", "GetCustomerProfile", "CreateCustomerProfile",
+                        "UpdateCustomerProfile",
+                        // Order — no delete
+                        "ListOrder", "GetOrder", "CreateOrder", "UpdateOrder",
+                        "ListCustomerOrders",
+                        // Product — no delete
+                        "ListProduct", "GetProduct", "CreateProduct", "UpdateProduct",
+                        "ListProductsByCategory",
+                        // Tag — no delete
+                        "ListTag", "GetTag", "CreateTag", "UpdateTag",
+                        // Relation — add only, no remove
+                        "ListProductTags", "AddTagToProduct",
+                        "ListTaggedProducts", "AssociateProductWithTag",
+                        // Role
                         "ROLE_EDITOR")
                 .build();
 
@@ -68,8 +102,15 @@ public class SecurityConfig {
                 .username("viewer")
                 .password(encoder.encode("viewer"))
                 .authorities(
-                        "product:read",
-                        "customer:read",
+                        // Read-only: list and get
+                        "ListCustomer", "GetCustomer",
+                        "ListCustomerProfile", "GetCustomerProfile",
+                        "ListOrder", "GetOrder", "ListCustomerOrders",
+                        "ListProduct", "GetProduct", "ListProductsByCategory",
+                        "ListTag", "GetTag",
+                        // Relation — read only
+                        "ListProductTags", "ListTaggedProducts",
+                        // Role
                         "ROLE_VIEWER")
                 .build();
 

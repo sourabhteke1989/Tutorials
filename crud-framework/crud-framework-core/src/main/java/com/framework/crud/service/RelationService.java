@@ -1,9 +1,9 @@
 package com.framework.crud.service;
 
 import com.framework.crud.definition.EntityDefinition;
-import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.CrudResponse;
 import com.framework.crud.model.ManyToManyRelation;
+import com.framework.crud.model.RelationOperation;
 import com.framework.crud.model.RelationRequest;
 import com.framework.crud.registry.EntityRegistry;
 import com.framework.crud.repository.DynamicCrudRepository;
@@ -92,17 +92,14 @@ public class RelationService {
         // 4. Resolve target entity
         EntityDefinition<?> targetDef = entityRegistry.getDefinition(relation.getTargetEntityType());
 
-        // 5. Route by operation
-        String op = (request.getOperation() == null || request.getOperation().isBlank())
-                ? "GET" : request.getOperation().toUpperCase();
+        // 5. Route by operation (defaults to GET if not specified)
+        RelationOperation op = request.getOperation() != null
+                ? request.getOperation() : RelationOperation.GET;
 
         return switch (op) {
-            case "GET" -> processGet(request, sourceDef, targetDef, relation);
-            case "ADD" -> processAdd(request, sourceDef, targetDef, relation);
-            case "REMOVE" -> processRemove(request, sourceDef, targetDef, relation);
-            default -> throw new IllegalArgumentException(
-                    "Invalid relation operation: '" + request.getOperation()
-                            + "'. Allowed: GET, ADD, REMOVE");
+            case GET -> processGet(request, sourceDef, targetDef, relation);
+            case ADD -> processAdd(request, sourceDef, targetDef, relation);
+            case REMOVE -> processRemove(request, sourceDef, targetDef, relation);
         };
     }
 
@@ -114,9 +111,8 @@ public class RelationService {
                                      EntityDefinition<?> sourceDef,
                                      EntityDefinition<?> targetDef,
                                      ManyToManyRelation relation) {
-        // Permission: user must have GET on both source and target
-        permissionService.checkAccess(sourceDef, CrudOperation.GET);
-        permissionService.checkAccess(targetDef, CrudOperation.GET);
+        // Permission: check relation-specific GET permission
+        permissionService.checkRelationAccess(relation, RelationOperation.GET, sourceDef.getEntityType());
 
         log.info("Relation GET: {} [id={}] —({})—> {} via {}",
                 sourceDef.getEntityType(), request.getId(),
@@ -136,9 +132,11 @@ public class RelationService {
             totalCount = repository.countByRelation(targetDef, relation, request.getId(), request.getFilters());
         }
 
-        auditService.audit(sourceDef.getEntityType(), CrudOperation.GET, request.getId(),
-                Map.of("relation", relation.getRelationName(),
-                       "targetEntity", targetDef.getEntityType()));
+        auditService.auditRelationQuery(sourceDef.getEntityType(), relation.getRelationName(),
+                targetDef.getEntityType(), request.getId(),
+                request.getFilters(), request.getProjectionType(),
+                request.getSortBy(), request.getSortDirection(),
+                request.getPage(), request.getSize());
 
         return CrudResponse.successList(
                 String.format("Related '%s' entities retrieved successfully via '%s'",
@@ -156,8 +154,8 @@ public class RelationService {
                                      ManyToManyRelation relation) {
         validateRelatedIds(request);
 
-        // Permission: user must have CREATE on the source entity
-        permissionService.checkAccess(sourceDef, CrudOperation.CREATE);
+        // Permission: check relation-specific ADD permission
+        permissionService.checkRelationAccess(relation, RelationOperation.ADD, sourceDef.getEntityType());
 
         log.info("Relation ADD: {} [id={}] —({})—> {} relatedIds={} via {}",
                 sourceDef.getEntityType(), request.getId(),
@@ -166,11 +164,9 @@ public class RelationService {
 
         int count = repository.addRelations(relation, request.getId(), request.getRelatedIds());
 
-        auditService.audit(sourceDef.getEntityType(), CrudOperation.CREATE, request.getId(),
-                Map.of("relation", relation.getRelationName(),
-                       "targetEntity", targetDef.getEntityType(),
-                       "relatedIds", request.getRelatedIds().toString(),
-                       "insertedCount", String.valueOf(count)));
+        auditService.auditRelationMutation(sourceDef.getEntityType(), relation.getRelationName(),
+                targetDef.getEntityType(), request.getId(),
+                request.getRelatedIds(), "ADD", count);
 
         return CrudResponse.success(
                 String.format("%d association(s) added between '%s' [id=%s] and '%s' %s via '%s'",
@@ -189,8 +185,8 @@ public class RelationService {
                                         ManyToManyRelation relation) {
         validateRelatedIds(request);
 
-        // Permission: user must have DELETE on the source entity
-        permissionService.checkAccess(sourceDef, CrudOperation.DELETE);
+        // Permission: check relation-specific REMOVE permission
+        permissionService.checkRelationAccess(relation, RelationOperation.REMOVE, sourceDef.getEntityType());
 
         log.info("Relation REMOVE: {} [id={}] —({})—> {} relatedIds={} via {}",
                 sourceDef.getEntityType(), request.getId(),
@@ -199,11 +195,9 @@ public class RelationService {
 
         int count = repository.removeRelations(relation, request.getId(), request.getRelatedIds());
 
-        auditService.audit(sourceDef.getEntityType(), CrudOperation.DELETE, request.getId(),
-                Map.of("relation", relation.getRelationName(),
-                       "targetEntity", targetDef.getEntityType(),
-                       "relatedIds", request.getRelatedIds().toString(),
-                       "deletedCount", String.valueOf(count)));
+        auditService.auditRelationMutation(sourceDef.getEntityType(), relation.getRelationName(),
+                targetDef.getEntityType(), request.getId(),
+                request.getRelatedIds(), "REMOVE", count);
 
         return CrudResponse.success(
                 String.format("%d association(s) removed between '%s' [id=%s] and '%s' %s via '%s'",
@@ -219,7 +213,7 @@ public class RelationService {
     private void validateRelatedIds(RelationRequest request) {
         if (request.getRelatedIds() == null || request.getRelatedIds().isEmpty()) {
             throw new IllegalArgumentException(
-                    "relatedIds is required for " + request.getOperation().toUpperCase()
+                    "relatedIds is required for " + request.getOperation()
                             + " operation (list of target entity primary keys)");
         }
     }

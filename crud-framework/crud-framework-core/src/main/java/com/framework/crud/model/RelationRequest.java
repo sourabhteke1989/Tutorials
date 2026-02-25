@@ -1,7 +1,11 @@
 package com.framework.crud.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * Request payload for the relation endpoint ({@code POST /api/crud/relation}).
@@ -58,7 +62,7 @@ public class RelationRequest {
      *   <li>REMOVE — delete association(s) from the junction table</li>
      * </ul>
      */
-    private String operation;
+    private RelationOperation operation;
 
     /**
      * List of target entity primary keys to add or remove associations for.
@@ -123,12 +127,23 @@ public class RelationRequest {
         this.id = id;
     }
 
-    public String getOperation() {
+    public RelationOperation getOperation() {
         return operation;
     }
 
-    public void setOperation(String operation) {
+    @JsonIgnore
+    public void setOperation(RelationOperation operation) {
         this.operation = operation;
+    }
+
+    /**
+     * Accept a string value for the operation field (used during JSON deserialization).
+     * Parses the string to {@link RelationOperation} via {@link RelationOperation#fromString(String)}.
+     * Returns {@link RelationOperation#GET} when null or blank.
+     */
+    @JsonSetter("operation")
+    public void setOperation(String operation) {
+        this.operation = RelationOperation.fromString(operation);
     }
 
     public List<Object> getRelatedIds() {

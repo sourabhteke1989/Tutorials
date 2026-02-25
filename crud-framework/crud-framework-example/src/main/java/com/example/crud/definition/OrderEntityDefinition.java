@@ -3,6 +3,8 @@ package com.example.crud.definition;
 import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
+import com.framework.crud.model.FilterPermission;
+import com.framework.crud.model.PermissionConfig;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 import org.springframework.stereotype.Component;
@@ -115,13 +117,18 @@ public class OrderEntityDefinition implements EntityDefinition<OrderEntityDefini
     }
 
     @Override
-    public Map<CrudOperation, String> getRequiredPermissions() {
-        return Map.of(
-                CrudOperation.GET, "customer:read",
-                CrudOperation.CREATE, "customer:write",
-                CrudOperation.UPDATE, "customer:write",
-                CrudOperation.DELETE, "customer:admin"
-        );
+    public PermissionConfig getPermissionConfig() {
+        return PermissionConfig.builder()
+                .listPermission("ListOrder")
+                .getPermission("GetOrder")
+                .createPermission("CreateOrder")
+                .updatePermission("UpdateOrder")
+                .deletePermission("DeleteOrder")
+                .filterPermission(
+                        FilterPermission.of(Set.of("customer_id"), "ListCustomerOrders")
+                                .description("List orders for a specific customer")
+                )
+                .build();
     }
 
     @Override

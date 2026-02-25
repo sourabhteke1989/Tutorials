@@ -71,8 +71,11 @@ crud-framework/
 │       │   ├── CrudRequest.java
 │       │   ├── CrudResponse.java
 │       │   ├── FieldDefinition.java
+│       │   ├── FilterPermission.java
 │       │   ├── IdType.java
 │       │   ├── ManyToManyRelation.java
+│       │   ├── PermissionConfig.java
+│       │   ├── RelationOperation.java
 │       │   ├── RelationRequest.java
 │       │   ├── UniqueConstraint.java
 │       │   └── ValidationResult.java
@@ -159,13 +162,14 @@ public class ProductEntityDefinition implements EntityDefinition<Product> {
     }
 
     @Override
-    public Map<CrudOperation, String> getRequiredPermissions() {
-        return Map.of(
-            CrudOperation.GET, "product:read",
-            CrudOperation.CREATE, "product:write",
-            CrudOperation.UPDATE, "product:write",
-            CrudOperation.DELETE, "product:admin"
-        );
+    public PermissionConfig getPermissionConfig() {
+        return PermissionConfig.builder()
+            .listPermission("ListProduct")
+            .getPermission("GetProduct")
+            .createPermission("CreateProduct")
+            .updatePermission("UpdateProduct")
+            .deletePermission("DeleteProduct")
+            .build();
     }
 
     @Override
@@ -457,7 +461,7 @@ The only thing a developer writes per entity. Methods:
 | `getIdColumn()`           | No       | PK column name (default: `id`)                           |
 | `getIdType()`             | No       | ID strategy: `AUTO_INCREMENT` (default) or `UUID`        |
 | `getProjectionTypes()`    | No       | Named projection → column lists                         |
-| `getRequiredPermissions()`| No       | Operation → permission string mapping                   |
+| `getPermissionConfig()`   | No       | Comprehensive permission config (LIST, GET, CREATE, UPDATE, DELETE + filter permissions) |
 | `getAllowedOperations()`  | No       | Which operations are supported (default: all)            |
 | `getUniqueConstraints()`  | No       | Uniqueness constraints checked before CREATE (default: none) |
 | `getManyToManyRelations()` | No      | Many-to-many junction-table relations (default: none)        |
@@ -486,10 +490,215 @@ FieldDefinition.of("name", "column_name", String.class)
 
 ### Role-Based Access Control (RBAC)
 
-1. Each `EntityDefinition` declares required permissions per operation
-2. The framework checks the current user's authorities via `CrudSecurityContext`
-3. Default implementation reads from Spring Security's `SecurityContextHolder`
-4. Override `CrudSecurityContext` bean for custom auth systems
+The framework provides comprehensive, fine-grained permission control with support for:
+- **Named permissions per operation** (LIST, GET, CREATE, UPDATE, DELETE)
+- **LIST vs GET distinction** — a GET without an ID is treated as a LIST operation
+- **Filter-based permissions** — special permissions for specific filter combinations
+- **Relation-specific permissions** — separate permissions for M:N relation operations
+
+#### Permission Configuration
+
+Each `EntityDefinition` declares a `PermissionConfig`:
+
+```java
+@Override
+public PermissionConfig getPermissionConfig() {
+    return PermissionConfig.builder()
+        .listPermission("ListProduct")       // GET without ID
+        .getPermission("GetProduct")         // GET with ID
+        .createPermission("CreateProduct")   // CREATE
+        .updatePermission("UpdateProduct")   // UPDATE
+        .deletePermission("DeleteProduct")   // DELETE
+        .build();
+}
+```
+
+If a permission is `null` or blank, no check is performed for that operation (open access).
+
+#### Filter-Based Permissions
+
+Define special permissions for specific filter field combinations on LIST operations.
+When a LIST request includes filters matching a `FilterPermission`, the filter-specific
+permission is required **instead of** the generic `listPermission`.
+
+```java
+@Override
+public PermissionConfig getPermissionConfig() {
+    return PermissionConfig.builder()
+        .listPermission("ListOrder")
+        .getPermission("GetOrder")
+        .createPermission("CreateOrder")
+        .updatePermission("UpdateOrder")
+        .deletePermission("DeleteOrder")
+        .filterPermission(
+            FilterPermission.of(Set.of("customer_id"), "ListCustomerOrders")
+                .description("List orders for a specific customer")
+        )
+        .build();
+}
+```
+
+**How matching works:**
+1. For a LIST request with filters, the framework checks if the entity has a `PermissionConfig` with any permissions defined
+2. If yes, the request's filter keys **must** match a configured `FilterPermission` — if **no** FilterPermissions are defined on the entity, **all filtering is denied**
+3. A match occurs when **all** fields in the `FilterPermission` are present in the request's filter keys
+4. Extra filter keys in the request are accepted (superset match)
+5. When multiple `FilterPermission`s match, the **most specific** one wins (most matching fields)
+6. If filters don't match any configured `FilterPermission` → **access denied**
+7. Entities with `PermissionConfig.empty()` (no permissions at all) are unaffected — filters allowed freely (backward compatible)
+
+**Example permission resolution for Order entity:**
+
+| Request                                     | Permission Required     |
+|---------------------------------------------|-------------------------|
+| `GET orders` (no filters)                   | `ListOrder`             |
+| `GET orders` with `{ "status": "pending" }` | **Denied** — no matching FilterPermission |
+| `GET orders` with `{ "customer_id": "abc" }`| `ListCustomerOrders`    |
+| `GET orders` with `{ "customer_id": "abc", "status": "pending" }` | `ListCustomerOrders` (superset match) |
+| `GET order` with `id: 1`                    | `GetOrder`              |
+
+**Example for Product entity** (no FilterPermissions configured → all filtering denied):
+
+| Request                                        | Result                  |
+|------------------------------------------------|-------------------------|
+| `GET products` (no filters)                    | `ListProduct`           |
+| `GET products` with `{ "category": "Electronics" }` | **Denied** — no FilterPermissions configured |
+| `GET product` with `id: 1`                     | `GetProduct`            |
+
+#### Relation-Specific Permissions
+
+Many-to-many relations support their own permission set:
+
+```java
+@Override
+public List<ManyToManyRelation> getManyToManyRelations() {
+    return List.of(
+        ManyToManyRelation.builder()
+            .relationName("tags")
+            .targetEntityType("tag")
+            .junctionTable("product_tags")
+            .sourceJoinColumn("product_id")
+            .targetJoinColumn("tag_id")
+            .getPermission("ListProductTags")          // Relation GET
+            .addPermission("AddTagToProduct")           // Relation ADD
+            .removePermission("RemoveTagFromProduct")   // Relation REMOVE
+            .build()
+    );
+}
+```
+
+If relation permissions are `null` or blank, no check is performed for that operation.
+
+#### Permission Resolution Flow
+
+```
+CRUD Request
+    │
+    ├── Operation = GET?
+    │   ├── ID provided? → check getPermission
+    │   └── No ID (LIST)?
+    │       ├── Has filters?
+    │       │   ├── Entity has PermissionConfig with permissions?
+    │       │   │   ├── FilterPermissions configured?
+    │       │   │   │   ├── Match found → check that filter's permission
+    │       │   │   │   └── No match → ACCESS DENIED
+    │       │   │   └── No FilterPermissions → ACCESS DENIED (filtering not allowed)
+    │       │   └── PermissionConfig.empty() → check listPermission
+    │       └── No filters → check listPermission
+    │
+    ├── Operation = CREATE? → check createPermission
+    ├── Operation = UPDATE? → check updatePermission
+    └── Operation = DELETE? → check deletePermission
+
+Relation Request
+    │
+    ├── Operation = GET?    → check relation.getPermission
+    ├── Operation = ADD?    → check relation.addPermission
+    └── Operation = REMOVE? → check relation.removePermission
+```
+
+#### Example: Complete Permission Setup
+
+The example application defines these named permissions:
+
+| Entity            | Permission             | Operation / Context                   |
+|-------------------|------------------------|---------------------------------------|
+| Customer          | `ListCustomer`         | List all customers                    |
+| Customer          | `GetCustomer`          | Get a single customer by ID           |
+| Customer          | `CreateCustomer`       | Create a customer                     |
+| Customer          | `UpdateCustomer`       | Update a customer                     |
+| Customer          | `DeleteCustomer`       | Delete a customer                     |
+| Order             | `ListOrder`            | List all orders                       |
+| Order             | `GetOrder`             | Get a single order by ID              |
+| Order             | `CreateOrder`          | Create an order                       |
+| Order             | `UpdateOrder`          | Update an order                       |
+| Order             | `DeleteOrder`          | Delete an order                       |
+| Order             | `ListCustomerOrders`   | List orders filtered by `customer_id` |
+| Product           | `ListProduct`          | List all products                     |
+| Product           | `GetProduct`           | Get a single product by ID            |
+| Product           | `CreateProduct`        | Create a product                      |
+| Product           | `UpdateProduct`        | Update a product                      |
+| Product           | `DeleteProduct`        | Delete a product                      |
+| Tag               | `ListTag`              | List all tags                         |
+| Tag               | `GetTag`               | Get a single tag by ID                |
+| Tag               | `CreateTag`            | Create a tag                          |
+| Tag               | `UpdateTag`            | Update a tag                          |
+| Tag               | `DeleteTag`            | Delete a tag                          |
+| Product→Tags      | `ListProductTags`      | List tags for a product (M:N GET)     |
+| Product→Tags      | `AddTagToProduct`      | Add tag to product (M:N ADD)          |
+| Product→Tags      | `RemoveTagFromProduct` | Remove tag from product (M:N REMOVE)  |
+| Tag→Products      | `ListTaggedProducts`   | List products for a tag (M:N GET)     |
+| Tag→Products      | `AssociateProductWithTag` | Add product to tag (M:N ADD)       |
+| Tag→Products      | `DetachProductFromTag` | Remove product from tag (M:N REMOVE)  |
+
+#### Demo Users
+
+| User   | Password | Permissions                                                   |
+|--------|----------|---------------------------------------------------------------|
+| admin  | admin    | **All** permissions + `ROLE_ADMIN`                            |
+| editor | editor   | List, Get, Create, Update + relation List/Add + `ROLE_EDITOR` |
+| viewer | viewer   | List, Get + relation List + `ROLE_VIEWER`                     |
+
+#### Customization
+
+The framework reads the current user's authorities from `CrudSecurityContext`:
+
+```java
+public interface CrudSecurityContext {
+    String getCurrentUsername();
+    Set<String> getCurrentRoles();
+    Set<String> getCurrentPermissions();
+    boolean hasPermission(String permission);
+}
+```
+
+The default implementation (`SpringSecurityCrudContext`) reads from Spring Security's `SecurityContextHolder`. Override the `CrudSecurityContext` bean for custom auth systems.
+
+#### Error Response (Access Denied)
+
+**Missing permission:**
+```json
+{
+  "success": false,
+  "message": "Access denied on entity 'order': operation LIST requires permission 'ListOrder'"
+}
+```
+
+**Unconfigured filter combination** (entity has permissions but the filter is not allowed):
+```json
+{
+  "success": false,
+  "message": "Filtering by [status] is not allowed on this entity. Only configured filter combinations are permitted."
+}
+```
+
+**No filter combinations configured at all** (entity has permissions but zero FilterPermissions defined):
+```json
+{
+  "success": false,
+  "message": "Filtering by [category] is not allowed on this entity. No filter combinations are configured."
+}
+```
 
 ### Uniqueness Constraints (Duplicate Detection)
 
@@ -1039,16 +1248,191 @@ ManyToManyRelation.builder()
 
 ### Audit Logging
 
-Every operation is logged with user, entity, operation, and ID. Replace `AuditService` bean to write to a DB table or external system.
+The framework provides **comprehensive audit logging** for every operation
+performed through the system. The built-in `AuditService` captures full
+operational context and writes structured log entries via SLF4J. Replace the
+bean with your own implementation to persist audit records to a database,
+message queue, or external audit system.
+
+#### Audited Operations
+
+| Category               | Operations              | Audit Method                | Key Data Captured                                                        |
+|------------------------|-------------------------|-----------------------------|--------------------------------------------------------------------------|
+| Entity Write           | CREATE, UPDATE, DELETE   | `audit()`                   | user, entity, operation, id, payload keys                                |
+| Entity Query           | GET (by id or list)      | `auditQuery()`              | user, entity, id, filters, projectionType, sortBy, sortDirection, page, size |
+| Relation Query         | M:N GET                  | `auditRelationQuery()`      | user, source entity + id, relation name, target entity, filters, projection, sort, pagination |
+| Relation Mutation      | M:N ADD / REMOVE         | `auditRelationMutation()`   | user, source entity + id, relation name, target entity, relatedIds, mutation type, affected count |
+
+#### Log Format
+
+All audit entries follow a structured pipe-delimited format for easy parsing
+by log aggregation tools (ELK, Splunk, CloudWatch, etc.).
+
+**Entity write operations (CREATE / UPDATE / DELETE):**
+```
+AUDIT | user=admin | entity=product | operation=CREATE | id=6 | payloadKeys=[name, price, category]
+```
+
+**Entity query operations (GET):**
+```
+AUDIT | user=admin | entity=product | operation=GET | id=ALL | filters={category=Electronics} | projection=summary | sort=price:DESC | page=0 | size=10
+```
+```
+AUDIT | user=admin | entity=product | operation=GET | id=3 | filters=none | projection=all | sort=default:ASC | page=N/A | size=N/A
+```
+
+**Relation query operations (M:N GET):**
+```
+AUDIT | user=admin | operation=RELATION_GET | source=product[id=1] | relation=tags | target=tag | filters={color=#3498DB} | projection=summary | sort=name:ASC | page=0 | size=20
+```
+
+**Relation mutation operations (M:N ADD / REMOVE):**
+```
+AUDIT | user=admin | operation=RELATION_ADD | source=product[id=1] | relation=tags | target=tag | relatedIds=[4, 5, 7] | affectedCount=3
+AUDIT | user=admin | operation=RELATION_REMOVE | source=product[id=1] | relation=tags | target=tag | relatedIds=[5] | affectedCount=1
+```
+
+#### AuditService API Reference
+
+**`audit(entityType, operation, id, payload)`** — Entity write operations
+
+| Parameter    | Type                  | Description                                              |
+|--------------|-----------------------|----------------------------------------------------------|
+| `entityType` | `String`              | The entity type (e.g. `"product"`)                        |
+| `operation`  | `CrudOperation`       | `CREATE`, `UPDATE`, or `DELETE`                           |
+| `id`         | `Object`              | Entity PK (`null` for CREATE before auto-generated ID)    |
+| `payload`    | `Map<String, Object>` | Request payload (`null` for DELETE)                       |
+
+**`auditQuery(entityType, id, filters, projectionType, sortBy, sortDirection, page, size)`** — Entity queries
+
+| Parameter        | Type                  | Description                                           |
+|------------------|-----------------------|-------------------------------------------------------|
+| `entityType`     | `String`              | The entity type being queried                          |
+| `id`             | `Object`              | Entity PK (non-null for single fetch, `null` for list) |
+| `filters`        | `Map<String, Object>` | Applied filter criteria (`null`/empty = none)          |
+| `projectionType` | `String`              | Named projection requested (`null` = all columns)      |
+| `sortBy`         | `String`              | Sort field (`null` = default ordering)                 |
+| `sortDirection`  | `String`              | `ASC` or `DESC` (`null` = ASC)                         |
+| `page`           | `Integer`             | Page number (`null` = unpaginated)                     |
+| `size`           | `Integer`             | Page size (`null` = unpaginated)                       |
+
+**`auditRelationQuery(sourceEntity, relationName, targetEntity, sourceId, filters, projectionType, sortBy, sortDirection, page, size)`** — Relation queries
+
+| Parameter        | Type                  | Description                                         |
+|------------------|-----------------------|-----------------------------------------------------|
+| `sourceEntity`   | `String`              | Source entity type (e.g. `"product"`)                 |
+| `relationName`   | `String`              | Logical relation name (e.g. `"tags"`)                 |
+| `targetEntity`   | `String`              | Target entity type (e.g. `"tag"`)                     |
+| `sourceId`       | `Object`              | Source entity primary key                             |
+| `filters`        | `Map<String, Object>` | Target entity filters (`null` = none)                 |
+| `projectionType` | `String`              | Named projection on target (`null` = all columns)     |
+| `sortBy`         | `String`              | Sort field on target (`null` = default)                |
+| `sortDirection`  | `String`              | `ASC` or `DESC` (`null` = ASC)                        |
+| `page`           | `Integer`             | Page number (`null` = unpaginated)                    |
+| `size`           | `Integer`             | Page size (`null` = unpaginated)                      |
+
+**`auditRelationMutation(sourceEntity, relationName, targetEntity, sourceId, relatedIds, mutationType, affectedCount)`** — Relation mutations
+
+| Parameter       | Type            | Description                                          |
+|-----------------|-----------------|------------------------------------------------------|
+| `sourceEntity`  | `String`        | Source entity type                                    |
+| `relationName`  | `String`        | Logical relation name                                 |
+| `targetEntity`  | `String`        | Target entity type                                    |
+| `sourceId`      | `Object`        | Source entity primary key                              |
+| `relatedIds`    | `List<Object>`  | Target entity PKs that were added/removed              |
+| `mutationType`  | `String`        | `"ADD"` or `"REMOVE"`                                  |
+| `affectedCount` | `int`           | Number of junction rows actually inserted or deleted   |
+
+#### Audit Coverage Matrix
+
+The following table shows exactly where each audit method is called:
+
+| Service           | Operation          | Audit Method              | When Called                          |
+|-------------------|--------------------|---------------------------|--------------------------------------|
+| `CrudService`     | GET (by id)        | `auditQuery()`            | After successful entity retrieval     |
+| `CrudService`     | GET (list)         | `auditQuery()`            | After query execution                 |
+| `CrudService`     | CREATE             | `audit()`                 | After INSERT + afterSave hook         |
+| `CrudService`     | UPDATE             | `audit()`                 | After UPDATE + afterSave hook         |
+| `CrudService`     | DELETE             | `audit()`                 | After DELETE + afterSave hook         |
+| `RelationService` | GET (M:N query)    | `auditRelationQuery()`    | After JOIN query execution            |
+| `RelationService` | ADD (M:N insert)   | `auditRelationMutation()` | After junction table INSERT           |
+| `RelationService` | REMOVE (M:N delete)| `auditRelationMutation()` | After junction table DELETE           |
+
+#### Customizing the Audit Service
+
+Override the default `AuditService` bean to persist audit records to a
+database, message queue, or external system. All four methods can be
+overridden independently:
+
+```java
+@Service
+public class DatabaseAuditService extends AuditService {
+
+    private final JdbcTemplate jdbc;
+
+    public DatabaseAuditService(CrudSecurityContext ctx, JdbcTemplate jdbc) {
+        super(ctx);
+        this.jdbc = jdbc;
+    }
+
+    @Override
+    public void audit(String entityType, CrudOperation op, Object id,
+                      Map<String, Object> payload) {
+        super.audit(entityType, op, id, payload);  // keep console log
+        jdbc.update("INSERT INTO audit_log (username, entity, operation, entity_id, payload) VALUES (?, ?, ?, ?, ?)",
+                getCurrentUsername(), entityType, op.name(), String.valueOf(id),
+                payload != null ? payload.toString() : null);
+    }
+
+    @Override
+    public void auditQuery(String entityType, Object id,
+                           Map<String, Object> filters, String projectionType,
+                           String sortBy, String sortDirection,
+                           Integer page, Integer size) {
+        super.auditQuery(entityType, id, filters, projectionType, sortBy, sortDirection, page, size);
+        // Persist query audit to DB or skip if read-auditing not needed
+    }
+
+    @Override
+    public void auditRelationQuery(String sourceEntity, String relationName,
+                                   String targetEntity, Object sourceId,
+                                   Map<String, Object> filters, String projectionType,
+                                   String sortBy, String sortDirection,
+                                   Integer page, Integer size) {
+        super.auditRelationQuery(sourceEntity, relationName, targetEntity, sourceId,
+                filters, projectionType, sortBy, sortDirection, page, size);
+        // Persist relation query audit
+    }
+
+    @Override
+    public void auditRelationMutation(String sourceEntity, String relationName,
+                                      String targetEntity, Object sourceId,
+                                      List<Object> relatedIds, String mutationType,
+                                      int affectedCount) {
+        super.auditRelationMutation(sourceEntity, relationName, targetEntity, sourceId,
+                relatedIds, mutationType, affectedCount);
+        jdbc.update("INSERT INTO audit_log (username, entity, operation, entity_id, details) VALUES (?, ?, ?, ?, ?)",
+                getCurrentUsername(), sourceEntity, "RELATION_" + mutationType,
+                String.valueOf(sourceId),
+                String.format("relation=%s target=%s ids=%s count=%d",
+                        relationName, targetEntity, relatedIds, affectedCount));
+    }
+}
+```
+
+> **Tip:** The default `AuditService` logs to SLF4J at `INFO` level. If you
+> only need file-based audit trails, configure your logging framework
+> (Logback / Log4j2) to route the `com.framework.crud.service.AuditService`
+> logger to a dedicated audit log file.
 
 ### Utility Endpoints
 
-| Endpoint                | Method | Auth     | Description                              |
-|-------------------------|--------|----------|------------------------------------------|
-| `/api/crud`             | POST   | Required | Main CRUD endpoint                       |
-| `/api/crud/relation`    | POST   | Required | Many-to-many relation query endpoint     |
-| `/api/crud/entities`    | GET    | Required | List registered entity types             |
-| `/api/crud/health`      | GET    | Public   | Health check                             |
+| Endpoint                | Method | Auth     | Description                                   |
+|-------------------------|--------|----------|-----------------------------------------------|
+| `/api/crud`             | POST   | Required | Main CRUD endpoint                            |
+| `/api/crud/relation`    | POST   | Required | Many-to-many relation query/mutation endpoint |
+| `/api/crud/entities`    | GET    | Required | List registered entity types                  |
+| `/api/crud/health`      | GET    | Public   | Health check                                  |
 
 ### Exception Handling & Error Responses
 
@@ -1222,13 +1606,24 @@ public CrudSecurityContext crudSecurityContext() {
 ```
 
 ### Custom Audit Service
+
+See the [Audit Logging](#audit-logging) section above for the full API
+reference, log format examples, and a complete `DatabaseAuditService`
+implementation showing how to override all four audit methods.
+
 ```java
 @Service
 public class DatabaseAuditService extends AuditService {
+    public DatabaseAuditService(CrudSecurityContext ctx, JdbcTemplate jdbc) {
+        super(ctx);
+        // ...
+    }
     @Override
     public void audit(String entityType, CrudOperation op, Object id, Map<String, Object> payload) {
-        // Write to audit_log table
+        super.audit(entityType, op, id, payload);
+        // Write to audit_log table, message queue, etc.
     }
+    // Override auditQuery(), auditRelationQuery(), auditRelationMutation() as needed
 }
 ```
 
@@ -1254,7 +1649,7 @@ public class NotificationListener {
 | SQL Injection            | All values via named parameters; identifiers are whitelist-validated |
 | Unknown fields           | Rejected during validation                                       |
 | Duplicate Prevention     | `UniqueConstraint` checked before INSERT; returns 409 Conflict   |
-| Many-to-Many Relations   | `ManyToManyRelation` + `/api/crud/relation` endpoint for JOIN queries |
+| Many-to-Many Relations   | `ManyToManyRelation` + `/api/crud/relation` endpoint for JOIN queries, ADD, REMOVE |
 | ID Strategy              | `AUTO_INCREMENT` or `UUID` per entity via `getIdType()`          |
 | Pagination               | `page`/`size` in request; `totalCount` in response               |
 | Sorting                  | `sortBy`/`sortDirection` validated against known columns         |
@@ -1262,3 +1657,4 @@ public class NotificationListener {
 | Transaction Management   | `@Transactional` on CrudService.process()                       |
 | Extensibility            | beforeSave/afterSave hooks + Spring event system                 |
 | Error Handling           | Consistent CrudResponse with field-level error maps              |
+| Audit Trail              | 4 dedicated audit methods covering CRUD, queries, relation queries, and relation mutations |
