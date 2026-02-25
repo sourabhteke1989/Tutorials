@@ -3,6 +3,7 @@ package com.example.crud.definition;
 import com.framework.crud.definition.EntityDefinition;
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
+import com.framework.crud.model.ManyToManyRelation;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 import org.springframework.stereotype.Component;
@@ -132,6 +133,20 @@ public class ProductEntityDefinition implements EntityDefinition<ProductEntityDe
         return List.of(
                 UniqueConstraint.of("name", "category")
                         .withMessage("A product with this name already exists in this category")
+        );
+    }
+
+    @Override
+    public List<ManyToManyRelation> getManyToManyRelations() {
+        return List.of(
+                // Products ↔ Tags via product_tags junction table
+                ManyToManyRelation.builder()
+                        .relationName("tags")
+                        .targetEntityType("tag")
+                        .junctionTable("product_tags")
+                        .sourceJoinColumn("product_id")
+                        .targetJoinColumn("tag_id")
+                        .build()
         );
     }
 

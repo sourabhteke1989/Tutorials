@@ -2,6 +2,8 @@ package com.framework.crud.definition;
 
 import com.framework.crud.model.CrudOperation;
 import com.framework.crud.model.FieldDefinition;
+import com.framework.crud.model.IdType;
+import com.framework.crud.model.ManyToManyRelation;
 import com.framework.crud.model.UniqueConstraint;
 import com.framework.crud.model.ValidationResult;
 
@@ -75,6 +77,26 @@ public interface EntityDefinition<T> {
      */
     default String getIdField() {
         return "id";
+    }
+
+    /**
+     * Primary key generation strategy. Default: {@link IdType#AUTO_INCREMENT}.
+     * <p>
+     * Override to use UUID-based IDs:
+     * <pre>
+     * &#64;Override
+     * public IdType getIdType() {
+     *     return IdType.UUID;
+     * }
+     * </pre>
+     * When using {@link IdType#UUID}, the ID column should be {@code VARCHAR(36)}
+     * or a native UUID type in the database. The framework generates a random UUID (v4)
+     * before INSERT and includes it in the payload automatically.
+     *
+     * @return the ID generation strategy for this entity.
+     */
+    default IdType getIdType() {
+        return IdType.AUTO_INCREMENT;
     }
 
     /**
@@ -171,6 +193,32 @@ public interface EntityDefinition<T> {
      * @return list of uniqueness constraints; empty list means no uniqueness checks.
      */
     default List<UniqueConstraint> getUniqueConstraints() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Many-to-many relationships this entity participates in as the <b>source</b> side.
+     * <p>
+     * Each {@link ManyToManyRelation} defines a junction table and the target entity,
+     * enabling the {@code POST /api/crud/relation} endpoint to query related entities
+     * via a SQL JOIN.
+     * <p>
+     * Example — Products that have Tags via a product_tags junction table:
+     * <pre>
+     * return List.of(
+     *     ManyToManyRelation.builder()
+     *         .relationName("tags")
+     *         .targetEntityType("tag")
+     *         .junctionTable("product_tags")
+     *         .sourceJoinColumn("product_id")
+     *         .targetJoinColumn("tag_id")
+     *         .build()
+     * );
+     * </pre>
+     *
+     * @return list of many-to-many relations; empty list means none.
+     */
+    default List<ManyToManyRelation> getManyToManyRelations() {
         return Collections.emptyList();
     }
 
