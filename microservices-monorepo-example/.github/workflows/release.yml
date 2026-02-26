@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Release version (for example 1.2.0)
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve revision
+        id: vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.revision }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "revision=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Java and Maven credentials
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          server-id: internal-repo
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Verify release build
+        run: mvn -B -ntp -Drevision=${{ steps.vars.outputs.revision }} -Dchangelist= clean verify
+
+      - name: Deploy release artifacts
+        run: mvn -B -ntp -Drevision=${{ steps.vars.outputs.revision }} -Dchangelist= clean deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}

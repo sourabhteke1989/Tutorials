@@ -1,0 +1,40 @@
+# Maven / Java build outputs
+**/target/
+**/build/
+**/out/
+
+# Maven wrapper (keep wrapper JAR if present)
+.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Java artifacts
+*.class
+*.jar
+*.war
+*.ear
+
+# Test and coverage outputs
+**/surefire-reports/
+**/failsafe-reports/
+**/jacoco.exec
+**/site/
+
+# Temp files
+*.tmp
+*.swp
+*.swo
