@@ -1,0 +1,167 @@
+{
+  "services": {
+    "user-mgmt": {
+      "public_endpoints": [
+        { "url": "/crud/health", "method": "GET" },
+        { "url": "/crud/entities", "method": "GET" },
+        { "url": "/auth/internal-auth/initiate", "method": "GET" },
+        { "url": "/auth/internal-auth/identify", "method": "POST" },
+        { "url": "/auth/internal-auth/public-key", "method": "GET" },
+        { "url": "/auth/internal-auth/login", "method": "POST" },
+        { "url": "/auth/internal-auth/refresh-token", "method": "POST" },
+        { "url": "/auth/internal-auth/logged-in-users", "method": "GET" },
+        { "url": "/applications", "method": "GET" },
+        { "url": "/permission-categories", "method": "GET" },
+        { "url": "/permissions", "method": "GET" },
+        { "url": "/application/{appCode}/resource-types", "method": "GET" },
+        { "url": "/version", "method": "GET" }
+      ],
+      "private_endpoints": [
+        { "url": "/crud", "method": "POST" },
+        { "url": "/crud/relation", "method": "POST" },
+        { "url": "/crud/file-upload-request", "method": "POST" },
+        { "url": "/crud/file-download-request", "method": "POST" },
+        { "url": "/auth/internal-auth/logout", "method": "POST" },
+        { "url": "/auth/internal-auth/logout-all", "method": "POST" },
+        { "url": "/user/list", "method": "GET" },
+        { "url": "/user", "method": "POST" },
+        { "url": "/user/{resourceId}", "method": "GET" },
+        { "url": "/user/{resourceId}", "method": "PUT" },
+        { "url": "/user/{resourceId}", "method": "DELETE" },
+        { "url": "/user/me", "method": "GET" },
+        { "url": "/user/{resourceId}/groups", "method": "GET" },
+        { "url": "/org-group/list", "method": "GET" },
+        { "url": "/org-group", "method": "POST" },
+        { "url": "/org-group/{resourceId}", "method": "GET" },
+        { "url": "/org-group/{resourceId}", "method": "PUT" },
+        { "url": "/org-group/{resourceId}", "method": "DELETE" },
+        { "url": "/org-policy/list", "method": "GET" },
+        { "url": "/org-policy", "method": "POST" },
+        { "url": "/org-policy/{resourceId}", "method": "GET" },
+        { "url": "/org-policy/{resourceId}", "method": "DELETE" },
+        { "url": "/user-access-control/app-permissions", "method": "GET" }
+      ]
+    },
+    "org-setting": {
+      "public_endpoints": [
+        { "url": "/crud/health", "method": "GET" },
+        { "url": "/crud/entities", "method": "GET" },
+        { "url": "/email-registration-initiate", "method": "POST" },
+        { "url": "/email-lead-verification", "method": "POST" },
+        { "url": "/organization/details", "method": "GET" },
+        { "url": "/organization/register", "method": "POST" },
+        { "url": "/crud/public", "method": "POST" },
+        { "url": "/public/master/countries", "method": "GET" },
+        { "url": "/public/master/timezones/country/{countryCode}", "method": "GET" }
+      ],
+      "private_endpoints": [
+        { "url": "/crud", "method": "POST" },
+        { "url": "/crud/relation", "method": "POST" },
+        { "url": "/crud/file-upload-request", "method": "POST" },
+        { "url": "/crud/file-download-request", "method": "POST" },
+        { "url": "/organization/location/list", "method": "GET" },
+        { "url": "/organization/location", "method": "POST" },
+        { "url": "/organization/location/{resourceId}", "method": "GET" },
+        { "url": "/organization/location/{resourceId}", "method": "PUT" },
+        { "url": "/organization/location/{resourceId}", "method": "DELETE" },
+        { "url": "/organization/logo", "method": "GET" },
+        { "url": "/organization/logo", "method": "POST" },
+        { "url": "/master/countries", "method": "GET" },
+        { "url": "/master/regions", "method": "GET" },
+        { "url": "/master/timezones", "method": "GET" },
+        { "url": "/master/states/{countryCode}", "method": "GET" }
+      ]
+    },
+    "document-store": {
+      "public_endpoints": [
+        { "url": "/crud/health", "method": "GET" },
+        { "url": "/crud/entities", "method": "GET" }
+      ],
+      "private_endpoints": [
+        { "url": "/crud", "method": "POST" },
+        { "url": "/crud/relation", "method": "POST" },
+        { "url": "/crud/file-upload-request", "method": "POST" },
+        { "url": "/crud/file-download-request", "method": "POST" },
+        { "url": "/document-store/download/{downloadToken}", "method": "GET" },
+        { "url": "/document-store/upload/{uploadToken}", "method": "POST" }
+      ]
+    },
+    "emp-mgmt": {
+      "public_endpoints": [
+        { "url": "/crud/health", "method": "GET" },
+        { "url": "/crud/entities", "method": "GET" }
+      ],
+      "private_endpoints": [
+        { "url": "/crud", "method": "POST" },
+        { "url": "/crud/relation", "method": "POST" },
+        { "url": "/crud/file-upload-request", "method": "POST" },
+        { "url": "/crud/file-download-request", "method": "POST" },
+        { "url": "/onboarding/start", "method": "POST" },
+        { "url": "/onboarding/submit", "method": "POST" },
+        { "url": "/onboarding/cancel/{resourceId}", "method": "POST" },
+        { "url": "/approval/process", "method": "POST" },
+        { "url": "/approval/pending", "method": "GET" },
+        { "url": "/approval/completed", "method": "GET" },
+        { "url": "/approval/request/{resourceId}", "method": "GET" },
+        { "url": "/approval/activity-log/{resourceId}", "method": "GET" },
+        { "url": "/employee/add", "method": "POST" },
+        { "url": "/employee/list", "method": "GET" },
+        { "url": "/employee/profile/{resourceId}", "method": "GET" },
+        { "url": "/employee/next-number", "method": "GET" },
+        { "url": "/employee/create-user/{resourceId}", "method": "POST" },
+        { "url": "/employee/from-onboarding/{resourceId}", "method": "POST" },
+        { "url": "/employee/me", "method": "GET" },
+        { "url": "/resignation/submit", "method": "POST" },
+        { "url": "/resignation/list", "method": "GET" },
+        { "url": "/resignation/cancel/{resourceId}", "method": "POST" },
+        { "url": "/resignation/withdraw/{resourceId}", "method": "POST" },
+        { "url": "/leave/apply", "method": "POST" },
+        { "url": "/leave/calculate-days", "method": "POST" },
+        { "url": "/leave/my-applications", "method": "GET" },
+        { "url": "/leave/my-balances", "method": "GET" },
+        { "url": "/leave/team-applications", "method": "GET" },
+        { "url": "/attendance/check-in", "method": "POST" },
+        { "url": "/attendance/check-out", "method": "POST" },
+        { "url": "/attendance/today", "method": "GET" },
+        { "url": "/attendance/my-records", "method": "GET" },
+        { "url": "/attendance/team-records", "method": "GET" },
+        { "url": "/attendance/list", "method": "GET" }
+      ]
+    },
+    "payroll-mgmt": {
+      "public_endpoints": [
+        { "url": "/crud/health", "method": "GET" },
+        { "url": "/crud/entities", "method": "GET" }
+      ],
+      "private_endpoints": [
+        { "url": "/crud", "method": "POST" },
+        { "url": "/crud/relation", "method": "POST" },
+        { "url": "/crud/file-upload-request", "method": "POST" },
+        { "url": "/crud/file-download-request", "method": "POST" },
+        { "url": "/rule-engine/expressions", "method": "GET" },
+        { "url": "/rule-engine/evaluate", "method": "POST" },
+        { "url": "/rule-engine/cache-refresh", "method": "POST" },
+        { "url": "/vpf/my-opt-in", "method": "GET" },
+        { "url": "/vpf/opt-in", "method": "POST" },
+        { "url": "/vpf/cancel/{resourceId}", "method": "POST" },
+        { "url": "/tax/my-declaration", "method": "GET" },
+        { "url": "/tax/regime-change", "method": "POST" },
+        { "url": "/tax/my-form16", "method": "GET" },
+        { "url": "/reports/payroll-summary", "method": "GET" },
+        { "url": "/reports/employee-status", "method": "GET" },
+        { "url": "/reports/payroll-history", "method": "GET" },
+        { "url": "/payslip/my-payslips", "method": "GET" },
+        { "url": "/payslip/details/{resourceId}", "method": "GET" },
+        { "url": "/payslip/line-items/{resourceId}", "method": "GET" },
+        { "url": "/payroll-run/initiate", "method": "POST" },
+        { "url": "/payroll-run/approve/{resourceId}", "method": "POST" },
+        { "url": "/payroll-run/reject/{resourceId}", "method": "POST" },
+        { "url": "/compensation/assign", "method": "POST" },
+        { "url": "/compensation/revise", "method": "POST" },
+        { "url": "/compensation/my-compensation", "method": "GET" },
+        { "url": "/salary-structure/preview", "method": "POST" },
+        { "url": "/salary-structure/employee-salary/{resourceId}", "method": "GET" }
+      ]
+    }
+  }
+}

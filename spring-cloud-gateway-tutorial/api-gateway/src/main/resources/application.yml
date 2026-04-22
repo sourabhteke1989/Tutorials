@@ -1,0 +1,74 @@
+server:
+  port: ${SERVER_PORT:80}
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: ${GATEWAY_CONNECTION_TIMEOUT:5000}
+        response-timeout: ${GATEWAY_RESPONSE_TIMEOUT:30s}
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+
+gateway:
+  router-config-file-path: ${GATEWAY_ROUTER_CONFIG_FILE_PATH:router-config-monolith.json}
+  security-config-file-path: ${GATEWAY_SECURITY_CONFIG_FILE_PATH:security-config.json}
+  development-mode: ${DEVELOPMENT_MODE:true}
+  https-redirect-enabled: ${HTTPS_REDIRECT_ENABLED:false}
+  default-environment: ${DEFAULT_ENVIRONMENT:production}
+  rate-limit:
+    per-tenant-limit: ${RATE_LIMIT_PER_TENANT:1000}
+    per-ip-limit: ${RATE_LIMIT_PER_IP:100}
+    per-user-limit: ${RATE_LIMIT_PER_USER:500}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+  resilience:
+    failure-rate-threshold: 50
+    slow-call-rate-threshold: 80
+    slow-call-duration-ms: 5000
+    minimum-number-of-calls: 10
+    sliding-window-size: 20
+    wait-duration-in-open-state-ms: 30000
+    permitted-calls-in-half-open: 5
+    max-retry-attempts: 2
+    retry-backoff-ms: 500
+    retry-backoff-multiplier: 2.0
+    max-backoff-ms: 5000
+    connection-timeout-ms: 5000
+    response-timeout-ms: 30000
+    max-concurrent-calls: 50
+    max-wait-duration-ms: 500
+  jwt:
+    generator: ${JWT_GENERATOR:jjwt}
+    secret-key: ${JWT_SECRET_KEY:ThisIsAVerySecureSecretKeyForHMACSHA256Algorithm!}
+    expiration: ${JWT_EXPIRATION:900000}
+    issuer: ${JWT_ISSUER:yourorg.com}
+    audience: ${JWT_AUDIENCE:yourorg.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+logging:
+  level:
+    root: ${ROOT_LOG_LEVEL:INFO}
+    com.yourorg.gateway: ${APP_LOG_LEVEL:DEBUG}
+    com.yourorg.gateway.filter: ${FILTER_LOG_LEVEL:DEBUG}
+    org.springframework.cloud.gateway: INFO
+  file:
+    path: ${LOG_FILE_PATH:.}

@@ -1,0 +1,20 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: user-mgmt-service
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:ThisIsAVerySecureSecretKeyForHMACSHA256Algorithm!}
+  expiration: ${JWT_EXPIRATION:900000}
+  issuer: ${JWT_ISSUER:yourorg.com}
+  audience: ${JWT_AUDIENCE:yourorg.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

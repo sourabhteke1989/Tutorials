@@ -1,0 +1,17 @@
+{
+  "allowed_hosts": ["yourorg.cloud", "yourorg.com", "yourorg.org", "yourorg.net", "localhost"],
+  "website_url": "http://localhost:3000",
+  "landing_app_url": "http://localhost:3000",
+  "services": {
+    "user-mgmt": "http://localhost:8081",
+    "org-setting": "http://localhost:8082",
+    "document-store": "http://localhost:8083",
+    "emp-mgmt": "http://localhost:8084",
+    "payroll-mgmt": "http://localhost:8085"
+  },
+  "ui_applications": {
+    "user-mgmt": "http://localhost:3001",
+    "emp-mgmt": "http://localhost:3002",
+    "payroll-mgmt": "http://localhost:3003"
+  }
+}

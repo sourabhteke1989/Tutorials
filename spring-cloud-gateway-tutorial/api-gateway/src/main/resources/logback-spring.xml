@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_PATH" value="${LOG_FILE_PATH:-.}" />
+
+    <!-- Console appender with structured JSON format (REQ-OB-001) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>tenantId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <includeMdcKeyName>serviceId</includeMdcKeyName>
+            <includeMdcKeyName>requestPath</includeMdcKeyName>
+            <includeMdcKeyName>httpMethod</includeMdcKeyName>
+            <includeMdcKeyName>httpStatus</includeMdcKeyName>
+            <includeMdcKeyName>durationMs</includeMdcKeyName>
+            <timeZone>UTC</timeZone>
+        </encoder>
+    </appender>
+
+    <!-- File appender (REQ-OB-005) -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/api-gateway.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/api-gateway-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>tenantId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <includeMdcKeyName>serviceId</includeMdcKeyName>
+            <includeMdcKeyName>requestPath</includeMdcKeyName>
+            <includeMdcKeyName>httpMethod</includeMdcKeyName>
+            <includeMdcKeyName>httpStatus</includeMdcKeyName>
+            <includeMdcKeyName>durationMs</includeMdcKeyName>
+            <timeZone>UTC</timeZone>
+        </encoder>
+    </appender>
+
+    <!-- Configurable log levels (REQ-OB-002) -->
+    <logger name="com.yourorg.gateway" level="${APP_LOG_LEVEL:-INFO}" />
+    <logger name="com.yourorg.gateway.filter" level="${FILTER_LOG_LEVEL:-INFO}" />
+    <logger name="com.yourorg.gateway.route" level="${ROUTER_LOG_LEVEL:-INFO}" />
+    <logger name="org.springframework.cloud.gateway" level="INFO" />
+
+    <root level="${ROOT_LOG_LEVEL:-INFO}">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>

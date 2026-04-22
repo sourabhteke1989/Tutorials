@@ -1,0 +1,16 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "mvn clean": true,
+        "npm install": true,
+        "npx playwright": true,
+        "mvn test": true,
+        "Out-Null": true,
+        "ForEach-Object": true,
+        "mvn package": true,
+        "java": true,
+        "mvn compile": true,
+        "mvn spring-boot:run": true,
+        "Push-Location": true,
+        "npm start": true
+    }
+}
